@@ -90,13 +90,13 @@ def make_trade(symbol:str, buy:bool, position_id:Optional[int]=None, **kwargs)->
     if buy:
         order_type = mt5.ORDER_TYPE_BUY
         price = symbol_info.ask
-        sl = price - float(kwargs['sl_points']) if kwargs['sl_points'] is not None else sl
-        tp = price + float(kwargs['tp_points']) if kwargs['tp_points'] is not None else tp
+        sl = price - float(kwargs['sl_points']) if (kwargs['sl_points'] is not None) and (kwargs['sl_points']!=0) else sl
+        tp = price + float(kwargs['tp_points']) if (kwargs['tp_points'] is not None) and (kwargs['tp_points']!=0) else tp
     else:
         order_type = mt5.ORDER_TYPE_SELL
         price = symbol_info.bid
-        sl = price + float(kwargs['sl_points']) if kwargs['sl_points'] is not None else sl
-        tp = price - float(kwargs['tp_points']) if kwargs['tp_points'] is not None else tp
+        sl = price + float(kwargs['sl_points']) if (kwargs['sl_points'] is not None) and (kwargs['sl_points']!=0) else sl
+        tp = price - float(kwargs['tp_points']) if (kwargs['tp_points'] is not None) and (kwargs['tp_points']!=0) else tp
 
     request = {
         "action": mt5.TRADE_ACTION_DEAL,
