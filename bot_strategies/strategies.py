@@ -124,11 +124,11 @@ class Rejection:
 
         if body_size != 0:
             t2b_ratio:float = tail_size / body_size
-            if t2b_ratio > 1.5 and wick_size <= 0.2*tail_size: return True
+            if t2b_ratio > 2 and wick_size <= 0.2*tail_size: return True
             else:return False
 
         else:
-            if wick_size <= 0.25*tail_size: return True
+            if wick_size <= 0.2*tail_size: return True
             else:return False
 
 
@@ -145,9 +145,9 @@ class Rejection:
 
         if body_size != 0:
             w2b_ratio:float = wick_size / body_size
-            if w2b_ratio > 1.5 and tail_size <= 0.2*wick_size: return True
+            if w2b_ratio > 2 and tail_size <= 0.2*wick_size: return True
             else:return False
 
         else:
-            if tail_size <= 0.25*wick_size: return True
+            if tail_size <= 0.2*wick_size: return True
             else:return False
