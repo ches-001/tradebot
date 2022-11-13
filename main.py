@@ -10,7 +10,7 @@ import pandas as pd
 import numpy as np
 import MetaTrader5 as mt5
 from datetime import datetime, timedelta
-from typing import Union, Optional, List, Dict
+from typing import Union, Optional, List
 from bot_strategies import ToluStrategy, Engulf, Rejection
 from utils import *
 
@@ -66,6 +66,7 @@ if __name__ == "__main__":
     parser.add_argument('--default_sl', type=float, default=4.0, metavar='', help='Default stop loss value (in pip)')
     parser.add_argument('--max_sl_dist', type=float, default=4.0, metavar='', help='Maximum distance between current price and stop loss (in pip)')
     parser.add_argument('--sl_trail', type=float, default=4.0, metavar='', help='Stop loss trail value (in pip)')
+    parser.add_argument('--defaul_tp', type=float, default=0.0, metavar='', help='Take profit value (in pip)')
     parser.add_argument('--strategy', type=str, default='tolu', metavar='', help='Strategy to use: Options(tolu, engulf, rejection, composite)')
     args = parser.parse_args()
 
@@ -96,18 +97,20 @@ if __name__ == "__main__":
     print(f'Trade Default SL:       {args.default_sl}')
     print(f'Trade max SL distance:  {args.max_sl_dist}')
     print(f'Trail SL Value:         {args.sl_trail}')
+    print(f'Trade TP:               {args.defaul_tp}')
+    print(f'Strategy:               {args.strategy}')
     print(f'Bot Session start time: {datetime.now()}', '\n')
 
     # Parameters
     ########################################################################################################################
-    SYMBOL:str = args.symbol                                            #symbol                                            #
-    VOLUME:float = args.volume                                          #volume to trade                                   #
-    DEVIATION:int = args.deviation                                      #allowable deviation for trade                     #
-    DEFAULT_SL_POINTS:Optional[float] = args.default_sl * args.unit_pip #stop loss points                                  #
-    MAX_DIST_SL:float = args.max_sl_dist * args.unit_pip                #maximun distance between price and stop loss      #
-    TRAIL_AMOUNT:float = args.sl_trail * args.unit_pip                  #icrement / decrement value for stop loss          #
-    DEFAULT_TP_POINTS:Optional[float] = None                            #take profit points                                #
-    STRATEGY:str = args.strategy                                        #strategy
+    SYMBOL:str = args.symbol                                            # symbol                                            #
+    VOLUME:float = args.volume                                          # volume to trade                                   #
+    DEVIATION:int = args.deviation                                      # allowable deviation for trade                     #
+    DEFAULT_SL_POINTS:Optional[float] = args.default_sl * args.unit_pip # stop loss points                                  #
+    MAX_DIST_SL:float = args.max_sl_dist * args.unit_pip                # maximun distance between price and stop loss      #
+    TRAIL_AMOUNT:float = args.sl_trail * args.unit_pip                  # icrement / decrement value for stop loss          #
+    DEFAULT_TP_POINTS:Optional[float] = args.defaul_tp * args.unit_pip  # take profit points                                #
+    STRATEGY:str = args.strategy                                        # strategy
     ########################################################################################################################
 
     #utility variables for the event loop
