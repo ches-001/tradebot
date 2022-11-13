@@ -10,9 +10,42 @@ import pandas as pd
 import numpy as np
 import MetaTrader5 as mt5
 from datetime import datetime, timedelta
-from typing import Union, Optional, List
-from bot_strategies import ToluStrategy
+from typing import Union, Optional, List, Dict
+from bot_strategies import ToluStrategy, Engulf, Rejection
 from utils import *
+
+# chain all strategies into one with the two functions 
+# below, for buying and selling respectively.
+def composite_strategy_buy(df:pd.DataFrame)->bool:
+    return ToluStrategy.is_bullish_trade(df) or \
+        Engulf.is_bullish_engulf(df) or \
+        Rejection.is_bullish_rejection(df)
+
+def composite_strategy_sell(df:pd.DataFrame)->bool:
+    return ToluStrategy.is_bearish_trade(df) or \
+        Engulf.is_bearish_engulf(df) or \
+        Rejection.is_bearish_rejection(df)
+
+
+# class for accessing all strategies. 
+class Strategy:
+
+    @staticmethod
+    def tolu()->dict:
+        return {'buy':ToluStrategy.is_bullish_trade, 'sell':ToluStrategy.is_bearish_trade}
+
+    @staticmethod
+    def engulf()->dict:
+        return {'buy':Engulf.is_bullish_engulf, 'sell':Engulf.is_bearish_engulf}
+
+    @staticmethod
+    def rejection()->dict:
+        return {'buy':Rejection.is_bullish_rejection, 'sell':Rejection.is_bearish_rejection}
+
+    @staticmethod
+    def composite()->dict:
+        return {'buy':composite_strategy_buy, 'sell':composite_strategy_sell}
+
 
 if __name__ == "__main__":
     APP_NAME = 'MetaTrader 5 Trade Bot'
@@ -33,22 +66,28 @@ if __name__ == "__main__":
     parser.add_argument('--default_sl', type=float, default=4.0, metavar='', help='Default stop loss value (in pip)')
     parser.add_argument('--max_sl_dist', type=float, default=4.0, metavar='', help='Maximum distance between current price and stop loss (in pip)')
     parser.add_argument('--sl_trail', type=float, default=4.0, metavar='', help='Stop loss trail value (in pip)')
+    parser.add_argument('--strategy', type=str, default='tolu', metavar='', help='Strategy to use: Options(tolu, engulf, rejection, composite)')
     args = parser.parse_args()
 
 
-    #initialise the MetaTrader 5 app
+    # initialise the MetaTrader 5 app
     init_env:bool = mt5.initialize(login=args.login, password=args.password, server=args.server)
     if not init_env:
         print('failed to initialise metatrader5')
         mt5.shutdown()
         sys.exit()
 
-    #check if symbol is valid
+    # check if symbol is valid
     if not is_valid_symbol(args.symbol):
         print(f'{args.symbol} is an invalid symbol')
         sys.exit()
 
-    #initial console comments
+    # check if strategy is valid
+    if not hasattr(Strategy, args.strategy):
+        print(f'{args.strategy} is an invalid strategy, go to the help menu for available options')
+        sys.exit()
+
+    # initial console comments
     print(APP_NAME, '\n')
     print(f'Trade Symbol:           {args.symbol}')
     print(f'Trade Volume:           {args.volume}')
@@ -68,6 +107,7 @@ if __name__ == "__main__":
     MAX_DIST_SL:float = args.max_sl_dist * args.unit_pip                #maximun distance between price and stop loss      #
     TRAIL_AMOUNT:float = args.sl_trail * args.unit_pip                  #icrement / decrement value for stop loss          #
     DEFAULT_TP_POINTS:Optional[float] = None                            #take profit points                                #
+    STRATEGY:str = args.strategy                                        #strategy
     ########################################################################################################################
 
     #utility variables for the event loop
@@ -128,7 +168,7 @@ if __name__ == "__main__":
             # check if condition for buying is satisfied and trade
             # then append the position id to the positions_id
             # list
-            if ToluStrategy.is_bullish_trade(rates_df):
+            if getattr(Strategy, STRATEGY)()['buy'](rates_df):
                 order = make_trade(
                     symbol = SYMBOL, 
                     buy = True, 
@@ -148,7 +188,7 @@ if __name__ == "__main__":
             # likewise, check if condition for selling is satisfied and
             # trade then append the position id to the positions_id
             # list
-            elif ToluStrategy.is_bearish_trade(rates_df):
+            elif getattr(Strategy, STRATEGY)()['sell'](rates_df):
                 order = make_trade(
                     symbol = SYMBOL, 
                     buy = False, 
