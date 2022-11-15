@@ -13,8 +13,7 @@ class Tolu:
 
         parameters
         -------------
-        df: (pandas.core.frame.DataFrame) - input dataframe, dataframe must have
-        only 2 rows
+        df: (pandas.core.frame.DataFrame) - input dataframe
             
         returns
         -------------
@@ -39,8 +38,7 @@ class Tolu:
 
         parameters
         -------------
-        df: (pandas.core.frame.DataFrame) - input dataframe, dataframe must have
-        only 2 rows
+        df: (pandas.core.frame.DataFrame) - input dataframe
             
         returns
         -------------
@@ -67,8 +65,7 @@ class Engulf:
 
         parameters
         -------------
-        df: (pandas.core.frame.DataFrame) - input dataframe, dataframe must have
-        only 2 rows
+        df: (pandas.core.frame.DataFrame) - input dataframe
             
         returns
         -------------
@@ -93,8 +90,7 @@ class Engulf:
 
         parameters
         -------------
-        df: (pandas.core.frame.DataFrame) - input dataframe, dataframe must have
-        only 2 rows
+        df: (pandas.core.frame.DataFrame) - input dataframe
             
         returns
         -------------
@@ -118,7 +114,17 @@ class Rejection:
 
     @staticmethod
     def is_bullish_rejection(df:pd.DataFrame, iloc_idx:int=-1)->bool:
+        r"""
+        checks if candle stick is a bullish rejection candle or not
 
+        parameters
+        -------------
+        df: (pandas.core.frame.DataFrame) - input dataframe
+            
+        returns
+        -------------
+        returns True, if condition is satisfied for bullish rejection, else False
+        """
         assert isinstance(df, pd.DataFrame), \
             f'expects input to be {pd.DataFrame}, got {type(df)} isntead'
 
@@ -137,7 +143,17 @@ class Rejection:
 
     @staticmethod
     def is_bearish_rejection(df:pd.DataFrame, iloc_idx:int=-1)->bool:
+        r"""
+        checks if candle stick is a bearish rejection candle or not
 
+        parameters
+        -------------
+        df: (pandas.core.frame.DataFrame) - input dataframe
+            
+        returns
+        -------------
+        returns True, if condition is satisfied for bearish rejection, else False
+        """
         assert isinstance(df, pd.DataFrame), \
             f'expects input to be {pd.DataFrame}, got {type(df)} isntead'
 
@@ -160,6 +176,20 @@ class SupportResistance:
 
     @staticmethod
     def boundary_trimer(boundaries:List[float], idxs:List[int], treshold:float)->Tuple[List[float], List[int]]:
+        r"""
+        checks if boundary values are close to each other by some treshold and
+        trims them appropriately.
+
+        parameters
+        -------------
+        boundaries: (List[float]) - list of boundary values
+
+        idxs: (List[int]) - List of corresponding index values for the boundaries 
+            
+        returns
+        -------------
+        returns Tuple of two lists, the trimed boundary list and its new index list
+        """
         new_boundaries:List[float] = []
         new_idxs:List[int] = []
 
@@ -172,6 +202,19 @@ class SupportResistance:
 
     @staticmethod
     def is_support_pivot(df:pd.DataFrame, idx:int)->bool:
+        r"""
+        checks if index in dataframe is a support pivot
+
+        parameters
+        -------------
+        df: (pandas.core.frame.DataFrame) - input dataframe
+
+        idx: (int) - index of potential pivot of interest
+            
+        returns
+        -------------
+        returns True if index is a support pivot, else returns False
+        """
         for i in range(1, idx+1):
             if df['low'].iloc[i] > df['low'].iloc[i-1]: return False
 
@@ -182,6 +225,19 @@ class SupportResistance:
 
     @staticmethod
     def is_resistance_pivot(df:pd.DataFrame, idx:int)->bool:
+        r"""
+        checks if index in dataframe is a resistance pivot
+
+        parameters
+        -------------
+        df: (pandas.core.frame.DataFrame) - input dataframe
+
+        idx: (int) - index of potential pivot of interest
+            
+        returns
+        -------------
+        returns True if index is a resistance pivot, else returns False
+        """
         for i in range(1, idx+1):
             if df['high'].iloc[i] < df['high'].iloc[i-1]: return False
 
@@ -192,6 +248,24 @@ class SupportResistance:
 
     @staticmethod
     def get_supports(df:pd.DataFrame, n1:int=2, n2:int=2)->Tuple[List[float], List[int]]:
+        r"""
+        get a list of all support pivots in the stock price dataframe
+
+        parameters
+        -------------
+        df: (pandas.core.frame.DataFrame) - input dataframe
+
+        n1: (int) - number of candles to consider prior to a potential
+        pivot point
+
+        n2: (int) - number of candles to consider after a potential pivot
+        point
+            
+        returns
+        -------------
+        returns a Tuple of 2 lists, the support values and their corresponding
+        index in the dateframe
+        """
         supports:List[float] = []
         support_idxs:List[int] = []
 
@@ -206,6 +280,24 @@ class SupportResistance:
 
     @staticmethod
     def get_resistances(df:pd.DataFrame, n1:int=2, n2:int=2)->Tuple[List[float], List[int]]:
+        r"""
+        get a list of all resistance pivots in the stock price dataframe
+
+        parameters
+        -------------
+        df: (pandas.core.frame.DataFrame) - input dataframe
+
+        n1: (int) - number of candles to consider prior to a potential
+        pivot point
+
+        n2: (int) - number of candles to consider after a potential pivot
+        point
+            
+        returns
+        -------------
+        returns a Tuple of 2 lists, the resistance values and their corresponding
+        index in the dateframe
+        """
         resistances:List[float] = []
         resistance_idxs:List[int] = []
 
@@ -220,6 +312,22 @@ class SupportResistance:
 
     @staticmethod
     def is_near_support(df:pd.DataFrame, treshold:float, idx:int=-1):
+        r"""
+        check if a candle of interest is close to a support level by some
+        treshold
+
+        parameters
+        -------------
+        df: (pandas.core.frame.DataFrame) - input dataframe
+
+        treshold: (float) - treshold value that defines what near a support is
+
+        idx: (int) - index of candle of interest
+            
+        returns
+        -------------
+        returns a True if candle is near a support pivot, else returns False
+        """
         supports, _ = SupportResistance.get_supports(df)
 
         if len(supports) == 0:return False
@@ -241,6 +349,22 @@ class SupportResistance:
 
     @staticmethod
     def is_near_resistance(df:pd.DataFrame, treshold:float, idx:int=-1):
+        r"""
+        check if a candle of interest is close to a resistance level by some
+        treshold
+
+        parameters
+        -------------
+        df: (pandas.core.frame.DataFrame) - input dataframe
+
+        treshold: (float) - treshold value that defines what near a resistance is
+
+        idx: (int) - index of candle of interest
+            
+        returns
+        -------------
+        returns a True if candle is near a resistance pivot, else returns False
+        """
         resistances, _ = SupportResistance.get_resistances(df)
 
         if len(resistances) == 0:return False
