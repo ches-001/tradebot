@@ -1,4 +1,6 @@
 import random
+import numpy as np
+import pandas as pd
 import MetaTrader5 as mt5
 from datetime import datetime
 from typing import Union, Optional, Tuple, List
@@ -215,3 +217,21 @@ def log_open_order(order:mt5.OrderSendResult, buy:bool)->None:
     print(f'\n{deal_order} order is opened at position_id:  {order.order}')
     print(f'time of trade:---------------------  {open_time}')
 
+
+def compute_latest_atr(df:pd.DataFrame)->float:
+    r"""
+    This function computes the latest ATR value for a stock price dataframe
+
+    parameters
+    -------------
+    df: (pd.DataFrame) - stock price data
+
+    buy: (flaot) - ATR value
+    """
+    HL_range:pd.Series = df['high'] - df['low']
+    HCp_range:pd.Series = np.abs(df['high'] - df['close'].shift())
+    LCp_range:pd.Series = np.abs(df['low'] - df['close'].shift())
+
+    TR = pd.concat((HL_range, HCp_range, LCp_range), axis=1).max(axis=1)
+    ATR = TR.mean()
+    return ATR

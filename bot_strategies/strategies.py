@@ -1,7 +1,9 @@
+import numpy as np
 import pandas as pd
+from typing import Tuple, List
 
 # Tolu Strategy
-class ToluStrategy:
+class Tolu:
 
     @staticmethod
     def is_bullish_trade(df:pd.DataFrame)->bool:
@@ -78,8 +80,9 @@ class Engulf:
         condition_1:bool = df['close'].iloc[-1] > df['high'].iloc[-2]
         condition_2:bool = df['open'].iloc[-1] <= df['close'].iloc[-2]
         condition_3:bool = df['close'].iloc[-1] > df['open'].iloc[-1]
+        condition_4:bool = df['close'].iloc[-2] < df['open'].iloc[-2]
 
-        if condition_1 and condition_2 and condition_3: return True
+        if condition_1 and condition_2 and condition_3 and condition_4: return True
 
         return False
 
@@ -103,8 +106,9 @@ class Engulf:
         condition_1:bool = df['close'].iloc[-1] < df['low'].iloc[-2]
         condition_2:bool = df['open'].iloc[-1] >= df['close'].iloc[-2]
         condition_3:bool = df['close'].iloc[-1] < df['open'].iloc[-1]
+        condition_4:bool = df['close'].iloc[-2] > df['open'].iloc[-2]
 
-        if condition_1 and condition_2 and condition_3: return True
+        if condition_1 and condition_2 and condition_3 and condition_4: return True
 
         return False
 
@@ -131,8 +135,6 @@ class Rejection:
             if wick_size <= 0.25*tail_size: return True
             else:return False
 
-
-    
     @staticmethod
     def is_bearish_rejection(df:pd.DataFrame, iloc_idx:int=-1)->bool:
 
@@ -145,9 +147,114 @@ class Rejection:
 
         if body_size != 0:
             w2b_ratio:float = wick_size / body_size
-            if w2b_ratio >= 2 and tail_size <= 0.25*wick_size: return True
+            if w2b_ratio >= 1.5 and tail_size <= 0.25*wick_size: return True
             else:return False
 
         else:
             if tail_size <= 0.25*wick_size: return True
             else:return False
+
+
+#support resistance strategy
+class SupportResistance:
+
+    @staticmethod
+    def boundary_trimer(boundaries:List[float], idxs:List[int], treshold:float)->Tuple[List[float], List[int]]:
+        new_boundaries:List[float] = []
+        new_idxs:List[int] = []
+
+        for i, b1 in enumerate(boundaries):
+            if np.sum([abs(b1 - y) < treshold for y in new_boundaries]) == 0:
+                new_boundaries.append(b1)
+                new_idxs.append(idxs[i])
+
+        return new_boundaries, new_idxs
+
+    @staticmethod
+    def is_support_pivot(df:pd.DataFrame, idx:int)->bool:
+        for i in range(1, idx+1):
+            if df['low'].iloc[i] > df['low'].iloc[i-1]: return False
+
+        for i in range(idx+1, len(df)):
+            if df['low'].iloc[i] < df['low'].iloc[i-1]: return False
+
+        return True
+
+    @staticmethod
+    def is_resistance_pivot(df:pd.DataFrame, idx:int)->bool:
+        for i in range(1, idx+1):
+            if df['high'].iloc[i] < df['high'].iloc[i-1]: return False
+
+        for i in range(idx+1, len(df)):
+            if df['high'].iloc[i] > df['high'].iloc[i-1]: return False
+
+        return True
+
+    @staticmethod
+    def get_supports(df:pd.DataFrame, n1:int=2, n2:int=2)->Tuple[List[float], List[int]]:
+        supports:List[float] = []
+        support_idxs:List[int] = []
+
+        for i in range(n1, len(df)-n2):
+            temp_df:pd.DataFrame = df[i-n1:i+n2+1]
+            if SupportResistance.is_support_pivot(temp_df, n1):
+                supports.append(df['low'].iloc[i])
+                support_idxs.append(i)
+
+        space_treshold:float = np.mean(df['high'] - df['low'])
+        return SupportResistance.boundary_trimer(supports, support_idxs, space_treshold)
+
+    @staticmethod
+    def get_resistances(df:pd.DataFrame, n1:int=2, n2:int=2)->Tuple[List[float], List[int]]:
+        resistances:List[float] = []
+        resistance_idxs:List[int] = []
+
+        for i in range(n1, len(df)-n2):
+            temp_df:pd.DataFrame = df[i-n1:i+n2+1]
+            if SupportResistance.is_resistance_pivot(temp_df, n1):
+                resistances.append(df['high'].iloc[i])
+                resistance_idxs.append(i)
+
+        space_treshold:float = np.mean(df['high'] - df['low'])
+        return SupportResistance.boundary_trimer(resistances, resistance_idxs, space_treshold)
+
+    @staticmethod
+    def is_near_support(df:pd.DataFrame, treshold:float, idx:int=-1):
+        supports, _ = SupportResistance.get_supports(df)
+
+        if len(supports) == 0:return False
+
+        o:float = df['open'].iloc[idx]
+        l:float = df['low'].iloc[idx]
+        h:float = df['high'].iloc[idx]
+        c:float = df['close'].iloc[idx]
+
+        closest_support:float = min(supports, key=lambda x : abs(x - h))
+
+        c1:bool = h > closest_support and max(o, c) > closest_support
+        c2:bool = abs(l - closest_support) <= treshold
+        c3:bool = abs(min(o, c) - closest_support) <= treshold
+        
+        if c1 and (c2 or c3):return True
+        return False
+
+
+    @staticmethod
+    def is_near_resistance(df:pd.DataFrame, treshold:float, idx:int=-1):
+        resistances, _ = SupportResistance.get_resistances(df)
+
+        if len(resistances) == 0:return False
+
+        o:float = df['open'].iloc[idx]
+        l:float = df['low'].iloc[idx]
+        h:float = df['high'].iloc[idx]
+        c:float = df['close'].iloc[idx]
+
+        closest_resistance:float = min(resistances, key=lambda x : abs(x - h))
+
+        c1:bool = l < closest_resistance and min(o, c) < closest_resistance
+        c2:bool = abs(h - closest_resistance) <= treshold
+        c3:bool = abs(max(o, c) - closest_resistance) <= treshold
+
+        if c1 and (c2 or c3):return True
+        return False

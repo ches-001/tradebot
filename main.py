@@ -11,20 +11,20 @@ import numpy as np
 import MetaTrader5 as mt5
 from datetime import datetime, timedelta
 from typing import Union, Optional, List
-from bot_strategies import ToluStrategy, Engulf, Rejection
+from bot_strategies import Tolu, Engulf, Rejection, SupportResistance
 from utils import *
 
 # chain all strategies into one with the two functions 
 # below, for buying and selling respectively.
 def composite_strategy_buy(df:pd.DataFrame)->bool:
-    return ToluStrategy.is_bullish_trade(df) or \
-        Engulf.is_bullish_engulf(df) or \
-        Rejection.is_bullish_rejection(df)
+    return Tolu.is_bullish_trade(df) or \
+            Engulf.is_bullish_engulf(df) or \
+            Rejection.is_bullish_rejection(df)
 
 def composite_strategy_sell(df:pd.DataFrame)->bool:
-    return ToluStrategy.is_bearish_trade(df) or \
-        Engulf.is_bearish_engulf(df) or \
-        Rejection.is_bearish_rejection(df)
+    return Tolu.is_bearish_trade(df) or \
+            Engulf.is_bearish_engulf(df) or\
+            Rejection.is_bearish_rejection(df)
 
 
 # class for accessing all strategies. 
@@ -32,7 +32,7 @@ class Strategy:
 
     @staticmethod
     def tolu()->dict:
-        return {'buy':ToluStrategy.is_bullish_trade, 'sell':ToluStrategy.is_bearish_trade}
+        return {'buy':Tolu.is_bullish_trade, 'sell':Tolu.is_bearish_trade}
 
     @staticmethod
     def engulf()->dict:
@@ -63,6 +63,7 @@ if __name__ == "__main__":
     parser.add_argument('--volume', type=float,default=10.0, metavar='', help='Volume to trade')
     parser.add_argument('--deviation', type=int, default=0, metavar='', help='Maximum acceptable deviation from the requested price')
     parser.add_argument('--unit_pip', type=float, default=1e-5, metavar='', help='Value of 1 pip for symbol')
+    parser.add_argument('--use_atr', type=int, choices=[0, 1], default=0, metavar='', help='Use Average True Return (ATR) to compute stop loss, trail and take profit. Note that when set to True, the unit_pip value will be set to the most recent ATR value')
     parser.add_argument('--default_sl', type=float, default=4.0, metavar='', help='Default stop loss value (in pip)')
     parser.add_argument('--max_sl_dist', type=float, default=4.0, metavar='', help='Maximum distance between current price and stop loss (in pip)')
     parser.add_argument('--sl_trail', type=float, default=4.0, metavar='', help='Stop loss trail value (in pip)')
@@ -94,6 +95,7 @@ if __name__ == "__main__":
     print(f'Trade Volume:           {args.volume}')
     print(f'Trade Deviation:        {args.deviation}')
     print(f'Trade Unit PIP:         {args.unit_pip}')
+    print(f'Use ATR:                {bool(args.use_atr)}')
     print(f'Trade Default SL:       {args.default_sl}')
     print(f'Trade max SL distance:  {args.max_sl_dist}')
     print(f'Trail SL Value:         {args.sl_trail}')
@@ -102,23 +104,27 @@ if __name__ == "__main__":
     print(f'Bot Session start time: {datetime.now()}', '\n')
 
     # Parameters
-    ########################################################################################################################
+    #########################################################################################################################
     SYMBOL:str = args.symbol                                            # symbol                                            #
     VOLUME:float = args.volume                                          # volume to trade                                   #
     DEVIATION:int = args.deviation                                      # allowable deviation for trade                     #
-    DEFAULT_SL_POINTS:Optional[float] = args.default_sl * args.unit_pip # stop loss points                                  #
-    MAX_DIST_SL:float = args.max_sl_dist * args.unit_pip                # maximun distance between price and stop loss      #
-    TRAIL_AMOUNT:float = args.sl_trail * args.unit_pip                  # icrement / decrement value for stop loss          #
-    DEFAULT_TP_POINTS:Optional[float] = args.default_tp * args.unit_pip  # take profit points                                #
-    STRATEGY:str = args.strategy                                        # strategy
-    ########################################################################################################################
+    UNIT_PIP:Optional[float] = args.unit_pip                            # unit pip value                                    #
+    DEFAULT_SL:Optional[float] = args.default_sl                        # stop loss points                                  #
+    MAX_DIST_SL:float = args.max_sl_dist                                # maximun distance between price and stop loss      #
+    TRAIL_AMOUNT:float = args.sl_trail                                  # icrement / decrement value for stop loss          #
+    DEFAULT_TP:Optional[float] = args.default_tp                        # take profit points                                #
+    STRATEGY:str = args.strategy                                        # strategy                                          #
+    USE_ATR:bool = bool(args.use_atr )                                  # option for using atr instead of unit pip value    #
+    #########################################################################################################################
 
     #utility variables for the event loop
     start_time:Optional[datetime] = None
     timezone_diff:timedelta = timedelta(hours=2)
-    lagtime:timedelta = timedelta(minutes=3)
+    lagtime:timedelta = timedelta(minutes=15)
     position_ids:List[int] = []
     session_profit:float = 0
+    atr_value:Optional[float] = None
+    sr_treshold:float = 0.2
 
     while True:
         
@@ -127,9 +133,9 @@ if __name__ == "__main__":
             for id in position_ids:
                 trailed_order:Union[int, mt5.OrderSendResult] = trail_sl(
                     position_id=id, 
-                    default_sl_points=DEFAULT_SL_POINTS, 
-                    max_dist_sl=MAX_DIST_SL, 
-                    trail_amount=TRAIL_AMOUNT)
+                    default_sl_points=DEFAULT_SL * (atr_value if USE_ATR else UNIT_PIP), 
+                    max_dist_sl=MAX_DIST_SL * (atr_value if USE_ATR else UNIT_PIP), 
+                    trail_amount=TRAIL_AMOUNT * (atr_value if USE_ATR else UNIT_PIP))
 
                 if isinstance(trailed_order, int):
                     profit:float = check_profit(trailed_order)
@@ -168,17 +174,23 @@ if __name__ == "__main__":
         # check if new session has started by the current time, and initialise trade
         if start_time != current_time:
 
+            start_time = current_time
+
+            #compute latest ATR
+            if USE_ATR: atr_value = compute_latest_atr(rates_df.iloc[:-1, :])
+
             # check if condition for buying is satisfied and trade
             # then append the position id to the positions_id
             # list
-            if getattr(Strategy, STRATEGY)()['buy'](rates_df):
+            if getattr(Strategy, STRATEGY)()['buy'](rates_df.iloc[:-1, :]) and \
+                SupportResistance.is_near_support(rates_df.iloc[:-1, :], sr_treshold):
                 order = make_trade(
                     symbol = SYMBOL, 
                     buy = True, 
                     position_id = None, 
                     volume = VOLUME, 
-                    sl_points = DEFAULT_SL_POINTS,
-                    tp_points = DEFAULT_TP_POINTS,
+                    sl_points = DEFAULT_SL * (atr_value if USE_ATR else UNIT_PIP),
+                    tp_points = DEFAULT_TP * (atr_value if USE_ATR else UNIT_PIP),
                     deviation = DEVIATION)
                     
                 print(order.comment)
@@ -186,24 +198,22 @@ if __name__ == "__main__":
                     log_open_order(order, buy=True)
                     position_ids.append(order.order)
 
-                start_time = current_time
 
             # likewise, check if condition for selling is satisfied and
             # trade then append the position id to the positions_id
             # list
-            elif getattr(Strategy, STRATEGY)()['sell'](rates_df):
+            elif getattr(Strategy, STRATEGY)()['sell'](rates_df.iloc[:-1, :]) and \
+                SupportResistance.is_near_resistance(rates_df.iloc[:-1, :], sr_treshold):
                 order = make_trade(
                     symbol = SYMBOL, 
                     buy = False, 
                     position_id = None, 
                     volume = VOLUME, 
-                    sl_points = DEFAULT_SL_POINTS, 
-                    tp_points = DEFAULT_TP_POINTS,
+                    sl_points = DEFAULT_SL * (atr_value if USE_ATR else UNIT_PIP),
+                    tp_points = DEFAULT_TP * (atr_value if USE_ATR else UNIT_PIP),
                     deviation = DEVIATION)
                 
                 print(order.comment)
                 if order.order != 0:
                     log_open_order(order, buy=False)
                     position_ids.append(order.order)
-
-                start_time = current_time

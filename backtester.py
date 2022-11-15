@@ -3,13 +3,15 @@ import pandas as pd
 import numpy as np
 import MetaTrader5 as mt5
 from backtesting import Backtest, Strategy
-from bot_strategies import Engulf, Rejection, ToluStrategy
+from bot_strategies import Engulf, Rejection, Tolu, SupportResistance
+from utils.utilities import compute_latest_atr
 from datetime import datetime
 
 #Base Strategy Class
 class BaseStrategyCase(Strategy):
     unit_pip:float = 0.01
     default_sl_points:float = 5
+    sr_treshold:float = 0.2
 
     def init(self):
         super().init()
@@ -21,7 +23,7 @@ class BaseStrategyCase(Strategy):
 # backtest Tolu Strategy
 class ToluStrategyCase(BaseStrategyCase):
 
-    offset = 2
+    offset = 12
 
     def next(self):
         super().next()
@@ -43,11 +45,11 @@ class ToluStrategyCase(BaseStrategyCase):
         df['low'] = self.data.Low[-self.offset:]
 
         if len(df) >= self.offset:
-            if ToluStrategy.is_bullish_trade(df):
+            if Tolu.is_bullish_trade(df) and SupportResistance.is_near_support(df, self.sr_treshold):
                 sl:float = current_price - (self.unit_pip * self.default_sl_points)
                 self.buy(sl=sl)
 
-            elif ToluStrategy.is_bearish_trade(df):
+            elif Tolu.is_bearish_trade(df) and SupportResistance.is_near_resistance(df, self.sr_treshold):
                 sl:float = current_price + (self.unit_pip * self.default_sl_points)
                 self.sell(sl=sl)
 
@@ -55,7 +57,7 @@ class ToluStrategyCase(BaseStrategyCase):
 # backtest engulf strategy
 class EngulfStrategyCase(BaseStrategyCase):
 
-    offset = 2
+    offset = 12
 
     def next(self):
         super().next()
@@ -77,11 +79,11 @@ class EngulfStrategyCase(BaseStrategyCase):
         df['low'] = self.data.Low[-self.offset:]
 
         if len(df) >= self.offset:
-            if Engulf.is_bullish_engulf(df):
+            if Engulf.is_bullish_engulf(df) and SupportResistance.is_near_support(df, self.sr_treshold):
                 sl:float = current_price - (self.unit_pip * self.default_sl_points)
                 self.buy(sl=sl)
 
-            elif Engulf.is_bearish_engulf(df):
+            elif Engulf.is_bearish_engulf(df) and SupportResistance.is_near_resistance(df, self.sr_treshold):
                 sl:float = current_price + (self.unit_pip * self.default_sl_points)
                 self.sell(sl=sl)
 
@@ -89,7 +91,7 @@ class EngulfStrategyCase(BaseStrategyCase):
 # Backtest Asian Rejection
 class RejectionStrategyCase(BaseStrategyCase):
 
-    offset = 2
+    offset = 12
 
     def next(self):
         super().next()
@@ -111,11 +113,11 @@ class RejectionStrategyCase(BaseStrategyCase):
         df['low'] = self.data.Low[-self.offset:]
 
         if len(df) >= self.offset:
-            if Rejection.is_bullish_rejection(df):
+            if Rejection.is_bullish_rejection(df) and SupportResistance.is_near_support(df, self.sr_treshold):
                 sl:float = current_price - (self.unit_pip * self.default_sl_points)
                 self.buy(sl=sl)
 
-            elif Engulf.is_bearish_engulf(df):
+            elif Engulf.is_bearish_engulf(df) and SupportResistance.is_near_resistance(df, self.sr_treshold):
                 sl:float = current_price + (self.unit_pip * self.default_sl_points)
                 self.sell(sl=sl)
 
@@ -124,7 +126,7 @@ class RejectionStrategyCase(BaseStrategyCase):
 # Backtest Asian Rejection
 class CompositeStrategyCase(BaseStrategyCase):
 
-    offset = 2
+    offset = 12
 
     def next(self):
         super().next()
@@ -149,14 +151,14 @@ class CompositeStrategyCase(BaseStrategyCase):
             if (
                 Rejection.is_bullish_rejection(df) or
                 Engulf.is_bullish_engulf(df) or
-                ToluStrategy.is_bullish_trade(df)):
+                Tolu.is_bullish_trade(df)) and SupportResistance.is_near_support(df, self.sr_treshold):
                 sl:float = current_price - (self.unit_pip * self.default_sl_points)
                 self.buy(sl=sl)
 
             elif (
                 Rejection.is_bearish_rejection(df) or
                 Engulf.is_bearish_engulf(df) or
-                ToluStrategy.is_bearish_trade(df)):
+                Tolu.is_bearish_trade(df)) and SupportResistance.is_near_resistance(df, self.sr_treshold):
                 sl:float = current_price + (self.unit_pip * self.default_sl_points)
                 self.sell(sl=sl)
 
@@ -171,10 +173,10 @@ if __name__ == '__main__':
         sys.exit()
 
     #start time
-    start_time:datetime = datetime(2022, 8, 1)
+    start_time:datetime = datetime(2022, 11, 14)
 
     # fetch and compile data
-    rates:np.ndarray = mt5.copy_rates_from('XAUUSD', mt5.TIMEFRAME_M1, start_time, 240_000)
+    rates:np.ndarray = mt5.copy_rates_from('XAUUSD', mt5.TIMEFRAME_M1, start_time, 1000)
     rates_df:pd.DataFrame = pd.DataFrame(rates)
     rates_df['time'] = [datetime.fromtimestamp(uts) for uts in rates_df['time']]
     rates_df.index = rates_df['time']
