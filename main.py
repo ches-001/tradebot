@@ -114,7 +114,7 @@ if __name__ == "__main__":
     TRAIL_AMOUNT:float = args.sl_trail                                  # icrement / decrement value for stop loss          #
     DEFAULT_TP:Optional[float] = args.default_tp                        # take profit points                                #
     STRATEGY:str = args.strategy                                        # strategy                                          #
-    USE_ATR:bool = bool(args.use_atr )                                  # option for using atr instead of unit pip value    #
+    USE_ATR:bool = bool(args.use_atr)                                   # option for using atr instead of unit pip value    #
     #########################################################################################################################
 
     #utility variables for the event loop
@@ -192,8 +192,9 @@ if __name__ == "__main__":
                     sl_points = DEFAULT_SL * (atr_value if USE_ATR else UNIT_PIP),
                     tp_points = DEFAULT_TP * (atr_value if USE_ATR else UNIT_PIP),
                     deviation = DEVIATION)
-                    
+                
                 print(order.comment)
+                if USE_ATR: print(f'current ATR: {atr_value}')
                 if order.order != 0:
                     log_open_order(order, buy=True)
                     position_ids.append(order.order)
@@ -214,6 +215,7 @@ if __name__ == "__main__":
                     deviation = DEVIATION)
                 
                 print(order.comment)
+                if USE_ATR: print(f'current ATR: {atr_value}')
                 if order.order != 0:
                     log_open_order(order, buy=False)
                     position_ids.append(order.order)

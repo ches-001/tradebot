@@ -211,11 +211,15 @@ def log_open_order(order:mt5.OrderSendResult, buy:bool)->None:
     buy: (bool) - to be set to True if order is buy order, else False
     """
     deal_order:str = 'buy' if buy else 'sell'
-    open_time:Union[int, str] = mt5.positions_get(ticket=order.order)[0].time
-    open_time = format_uts(open_time, dt_obj=False)
+    position:mt5.TradePosition = mt5.positions_get(ticket=order.order)[0]
+    open_time = format_uts(position.time, dt_obj=False)
+    sl:float = position.sl
+    open_price:float = position.price_open
 
     print(f'\n{deal_order} order is opened at position_id:  {order.order}')
     print(f'time of trade:---------------------  {open_time}')
+    print(f'initial stop loss:-----------------  {sl}')
+    print(f'open price: -----------------------  {open_price}')
 
 
 def compute_latest_atr(df:pd.DataFrame)->float:
