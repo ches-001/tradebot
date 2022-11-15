@@ -123,7 +123,8 @@ def make_trade(symbol:str, buy:bool, position_id:Optional[int]=None, **kwargs)->
 
 
 def trail_sl(
-    position_id:int, default_sl_points:float, max_dist_sl:float, trail_amount:float)->Union[int, mt5.OrderSendResult]:
+    position_id:int, default_sl_points:float, max_dist_sl:float,
+    trail_amount:float)->Union[int, mt5.OrderSendResult, mt5.TradePosition]:
     r"""
     This function implements the trailing stop loss for a trade
 
@@ -153,13 +154,14 @@ def trail_sl(
     current_price:float = position.price_current
     open_price:float = position.price_open
     current_sl:float = position.sl
+    current_tp:float = position.tp
 
     dist_from_sl:float = abs(round(current_price - current_sl, 6))
 
     new_sl:float
-    if dist_from_sl > max_dist_sl:
+    if dist_from_sl > max_dist_sl and  trail_amount != 0:
         if current_sl == 0:
-            #setting default SL if no SL in ticket
+            #setting default SL if no SL in position
             new_sl = open_price + (-default_sl_points if (order_type==mt5.ORDER_TYPE_BUY) else default_sl_points)
 
         else:
@@ -173,11 +175,14 @@ def trail_sl(
             'action': mt5.TRADE_ACTION_SLTP,
             'position': position_id,
             'sl': float(new_sl),
+            'tp':float(current_tp),
         }
 
         order:mt5.OrderSendResult = mt5.order_send(request)
         if not order:print(mt5.last_error())
         return order
+
+    return position
 
 
 def check_profit(position_id:int)->Optional[float]:
@@ -214,12 +219,14 @@ def log_open_order(order:mt5.OrderSendResult, buy:bool)->None:
     position:mt5.TradePosition = mt5.positions_get(ticket=order.order)[0]
     open_time = format_uts(position.time, dt_obj=False)
     sl:float = position.sl
+    tp:float = position.tp
     open_price:float = position.price_open
 
     print(f'\n{deal_order} order is opened at position_id:  {order.order}')
+    print(f'open price: -----------------------  {open_price}')
     print(f'time of trade:---------------------  {open_time}')
     print(f'initial stop loss:-----------------  {sl}')
-    print(f'open price: -----------------------  {open_price}')
+    print(f'initial take profit:---------------  {tp}')
 
 
 def compute_latest_atr(df:pd.DataFrame)->float:

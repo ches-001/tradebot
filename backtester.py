@@ -3,16 +3,18 @@ import pandas as pd
 import numpy as np
 import MetaTrader5 as mt5
 from backtesting import Backtest, Strategy
-from bot_strategies import Engulf, Rejection, Tolu, SupportResistance
+from bot_strategies import Engulf, Rejection, Tolu
 from utils.utilities import compute_latest_atr
 from datetime import datetime
 from typing import Optional
+from main import at_resistance, at_support
 
 #Base Strategy Class
 class BaseStrategyCase(Strategy):
     unit_pip:Optional[float] = None
     sr_treshold:Optional[float] = None
     default_sl_points:float = 0.4
+    sr_probability:float = 0.2
 
     def init(self):
         super().init()
@@ -48,11 +50,13 @@ class ToluStrategyCase(BaseStrategyCase):
         if len(df) >= self.offset:
             self.unit_pip = compute_latest_atr(df.iloc[:-1, :])
             self.sr_treshold = self.unit_pip * 0.5
-            if Tolu.is_bullish_trade(df.iloc[:-1, :]) and SupportResistance.is_near_support(df.iloc[:-1, :], self.sr_treshold):
+            if Tolu.is_bullish_trade(df.iloc[:-1, :]) and \
+                at_support(df.iloc[:-1, :], p=self.sr_probability, treshold=self.sr_treshold):
                 sl:float = current_price - (self.unit_pip * self.default_sl_points)
                 self.buy(sl=sl)
 
-            elif Tolu.is_bearish_trade(df.iloc[:-1, :]) and SupportResistance.is_near_resistance(df.iloc[:-1, :], self.sr_treshold):
+            elif Tolu.is_bearish_trade(df.iloc[:-1, :]) and \
+                at_resistance(df.iloc[:-1, :], p=self.sr_probability, treshold=self.sr_treshold):
                 sl:float = current_price + (self.unit_pip * self.default_sl_points)
                 self.sell(sl=sl)
 
@@ -84,11 +88,13 @@ class EngulfStrategyCase(BaseStrategyCase):
         if len(df) >= self.offset:
             self.unit_pip = compute_latest_atr(df.iloc[:-1, :])
             self.sr_treshold = self.unit_pip * 0.5
-            if Engulf.is_bullish_engulf(df.iloc[:-1, :]) and SupportResistance.is_near_support(df.iloc[:-1, :], self.sr_treshold):
+            if Engulf.is_bullish_engulf(df.iloc[:-1, :]) and \
+                at_support(df.iloc[:-1, :], p=self.sr_probability, treshold=self.sr_treshold):
                 sl:float = current_price - (self.unit_pip * self.default_sl_points)
                 self.buy(sl=sl)
 
-            elif Engulf.is_bearish_engulf(df.iloc[:-1, :]) and SupportResistance.is_near_resistance(df.iloc[:-1, :], self.sr_treshold):
+            elif Engulf.is_bearish_engulf(df.iloc[:-1, :]) and \
+                at_resistance(df.iloc[:-1, :], p=self.sr_probability, treshold=self.sr_treshold):
                 sl:float = current_price + (self.unit_pip * self.default_sl_points)
                 self.sell(sl=sl)
 
@@ -120,11 +126,13 @@ class RejectionStrategyCase(BaseStrategyCase):
         if len(df) >= self.offset:
             self.unit_pip = compute_latest_atr(df.iloc[:-1, :])
             self.sr_treshold = self.unit_pip * 0.5
-            if Rejection.is_bullish_rejection(df.iloc[:-1, :]) and SupportResistance.is_near_support(df.iloc[:-1, :], self.sr_treshold):
+            if Rejection.is_bullish_rejection(df.iloc[:-1, :]) and \
+                at_support(df.iloc[:-1, :], p=self.sr_probability, treshold=self.sr_treshold):
                 sl:float = current_price - (self.unit_pip * self.default_sl_points)
                 self.buy(sl=sl)
 
-            elif Engulf.is_bearish_engulf(df.iloc[:-1, :]) and SupportResistance.is_near_resistance(df.iloc[:-1, :], self.sr_treshold):
+            elif Engulf.is_bearish_engulf(df.iloc[:-1, :]) and \
+                at_resistance(df.iloc[:-1, :], p=self.sr_probability, treshold=self.sr_treshold):
                 sl:float = current_price + (self.unit_pip * self.default_sl_points)
                 self.sell(sl=sl)
 
@@ -160,14 +168,16 @@ class CompositeStrategyCase(BaseStrategyCase):
             if (
                 Rejection.is_bullish_rejection(df.iloc[:-1, :]) or
                 Engulf.is_bullish_engulf(df.iloc[:-1, :]) or
-                Tolu.is_bullish_trade(df.iloc[:-1, :])) and SupportResistance.is_near_support(df.iloc[:-1, :], self.sr_treshold):
+                Tolu.is_bullish_trade(df.iloc[:-1, :])) and \
+                at_support(df.iloc[:-1, :], p=self.sr_probability, treshold=self.sr_treshold):
                 sl:float = current_price - (self.unit_pip * self.default_sl_points)
                 self.buy(sl=sl)
 
             elif (
                 Rejection.is_bearish_rejection(df.iloc[:-1, :]) or
                 Engulf.is_bearish_engulf(df.iloc[:-1, :]) or
-                Tolu.is_bearish_trade(df.iloc[:-1, :])) and SupportResistance.is_near_resistance(df.iloc[:-1, :], self.sr_treshold):
+                Tolu.is_bearish_trade(df.iloc[:-1, :])) and \
+                at_resistance(df.iloc[:-1, :], p=self.sr_probability, treshold=self.sr_treshold):
                 sl:float = current_price + (self.unit_pip * self.default_sl_points)
                 self.sell(sl=sl)
 
@@ -185,7 +195,7 @@ if __name__ == '__main__':
     start_time:datetime = datetime(2022, 11, 14)
 
     # fetch and compile data
-    rates:np.ndarray = mt5.copy_rates_from('XAUUSD', mt5.TIMEFRAME_M1, start_time, 24000)
+    rates:np.ndarray = mt5.copy_rates_from('XAUUSD', mt5.TIMEFRAME_M1, start_time, 84000)
     rates_df:pd.DataFrame = pd.DataFrame(rates)
     rates_df['time'] = [datetime.fromtimestamp(uts) for uts in rates_df['time']]
     rates_df.index = rates_df['time']

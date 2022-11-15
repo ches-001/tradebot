@@ -51,14 +51,14 @@ class Strategy:
 
 # this function returns true (p x 100)% of the times, and verifys
 # that the index is at the support (100 - (p-100))% of the times
-def on_support(df:pd.DataFrame, p:float=0.5, **kwargs)->bool:
+def at_support(df:pd.DataFrame, p:float=0.5, **kwargs)->bool:
     if np.random.random() < p:
         return SupportResistance.is_near_support(df, **kwargs)
     return True
 
 # this function returns true (p x 100)% of the times, and verifys
 # that the index is at the reistance (100 - (p-100))% of the times
-def on_resistance(df:pd.DataFrame, p:float=0.5, **kwargs)->bool:
+def at_resistance(df:pd.DataFrame, p:float=0.5, **kwargs)->bool:
     if np.random.random() < p:
         return SupportResistance.is_near_resistance(df, **kwargs)
     return True
@@ -201,7 +201,7 @@ if __name__ == "__main__":
             # then append the position id to the positions_id
             # list
             if getattr(Strategy, STRATEGY)()['buy'](rates_df.iloc[:-1, :]) and \
-                on_support(rates_df.iloc[:-1, :], p=SR_PROBABILITY, treshold=sr_treshold):
+                at_support(rates_df.iloc[:-1, :], p=SR_PROBABILITY, treshold=sr_treshold):
                 order = make_trade(
                     symbol = SYMBOL, 
                     buy = True, 
@@ -212,7 +212,7 @@ if __name__ == "__main__":
                     deviation = DEVIATION)
                 
                 print(order.comment)
-                if USE_ATR: print(f'current ATR: {atr_value}')
+                if USE_ATR: print(f'current ATR: {round(atr_value, 4)}')
                 if order.order != 0:
                     log_open_order(order, buy=True)
                     position_ids.append(order.order)
@@ -222,7 +222,7 @@ if __name__ == "__main__":
             # trade then append the position id to the positions_id
             # list
             elif getattr(Strategy, STRATEGY)()['sell'](rates_df.iloc[:-1, :]) and \
-                on_resistance(rates_df.iloc[:-1, :], p=SR_PROBABILITY, treshold=sr_treshold):
+                at_resistance(rates_df.iloc[:-1, :], p=SR_PROBABILITY, treshold=sr_treshold):
                 order = make_trade(
                     symbol = SYMBOL, 
                     buy = False, 
@@ -233,7 +233,7 @@ if __name__ == "__main__":
                     deviation = DEVIATION)
                 
                 print(order.comment)
-                if USE_ATR: print(f'current ATR: {atr_value}')
+                if USE_ATR: print(f'current ATR: {round(atr_value, 4)}')
                 if order.order != 0:
                     log_open_order(order, buy=False)
                     position_ids.append(order.order)
