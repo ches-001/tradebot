@@ -132,7 +132,7 @@ if __name__ == "__main__":
     DEFAULT_TP:Optional[float] = args.default_tp                        # take profit points                                                           #
     STRATEGY:str = args.strategy                                        # strategy                                                                     #
     USE_ATR:bool = bool(args.use_atr)                                   # option for using atr instead of unit pip value                               #
-    SR_PROBABILITY:float = 0.7                                          # probability score that controls how support resistance indicators are used   #
+    SR_PROBABILITY:float = 0.5                                          # probability score that controls how support resistance indicators are used   #
     ####################################################################################################################################################
 
     #utility variables for the event loop
