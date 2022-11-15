@@ -14,13 +14,15 @@ from typing import Union, Optional, List
 from bot_strategies import Tolu, Engulf, Rejection, SupportResistance
 from utils import *
 
-# chain all strategies into one with the two functions 
-# below, for buying and selling respectively.
+# chain all buy strategies into one to form a composite
+# buy strategy
 def composite_strategy_buy(df:pd.DataFrame)->bool:
     return Tolu.is_bullish_trade(df) or \
             Engulf.is_bullish_engulf(df) or \
             Rejection.is_bullish_rejection(df)
 
+# chain all sell strategies into one to form a composite
+# sell strategy
 def composite_strategy_sell(df:pd.DataFrame)->bool:
     return Tolu.is_bearish_trade(df) or \
             Engulf.is_bearish_engulf(df) or\
@@ -45,6 +47,21 @@ class Strategy:
     @staticmethod
     def composite()->dict:
         return {'buy':composite_strategy_buy, 'sell':composite_strategy_sell}
+
+
+# this function returns true (p x 100)% of the times, and verifys
+# that the index is at the support (100 - (p-100))% of the times
+def on_support(df:pd.DataFrame, p:float=0.5, **kwargs)->bool:
+    if np.random.random() < p:
+        return SupportResistance.is_near_support(df, **kwargs)
+    return True
+
+# this function returns true (p x 100)% of the times, and verifys
+# that the index is at the reistance (100 - (p-100))% of the times
+def on_resistance(df:pd.DataFrame, p:float=0.5, **kwargs)->bool:
+    if np.random.random() < p:
+        return SupportResistance.is_near_resistance(df, **kwargs)
+    return True
 
 
 if __name__ == "__main__":
@@ -104,18 +121,19 @@ if __name__ == "__main__":
     print(f'Bot Session start time: {datetime.now()}', '\n')
 
     # Parameters
-    #########################################################################################################################
-    SYMBOL:str = args.symbol                                            # symbol                                            #
-    VOLUME:float = args.volume                                          # volume to trade                                   #
-    DEVIATION:int = args.deviation                                      # allowable deviation for trade                     #
-    UNIT_PIP:Optional[float] = args.unit_pip                            # unit pip value                                    #
-    DEFAULT_SL:Optional[float] = args.default_sl                        # stop loss points                                  #
-    MAX_DIST_SL:float = args.max_sl_dist                                # maximun distance between price and stop loss      #
-    TRAIL_AMOUNT:float = args.sl_trail                                  # icrement / decrement value for stop loss          #
-    DEFAULT_TP:Optional[float] = args.default_tp                        # take profit points                                #
-    STRATEGY:str = args.strategy                                        # strategy                                          #
-    USE_ATR:bool = bool(args.use_atr)                                   # option for using atr instead of unit pip value    #
-    #########################################################################################################################
+    ####################################################################################################################################################
+    SYMBOL:str = args.symbol                                            # symbol                                                                       #
+    VOLUME:float = args.volume                                          # volume to trade                                                              #
+    DEVIATION:int = args.deviation                                      # allowable deviation for trade                                                #
+    UNIT_PIP:Optional[float] = args.unit_pip                            # unit pip value                                                               #
+    DEFAULT_SL:Optional[float] = args.default_sl                        # stop loss points                                                             #
+    MAX_DIST_SL:float = args.max_sl_dist                                # maximun distance between price and stop loss                                 #
+    TRAIL_AMOUNT:float = args.sl_trail                                  # icrement / decrement value for stop loss                                     #
+    DEFAULT_TP:Optional[float] = args.default_tp                        # take profit points                                                           #
+    STRATEGY:str = args.strategy                                        # strategy                                                                     #
+    USE_ATR:bool = bool(args.use_atr)                                   # option for using atr instead of unit pip value                               #
+    SR_PROBABILITY:float = 0.7                                          # probability score that controls how support resistance indicators are used   #
+    ####################################################################################################################################################
 
     #utility variables for the event loop
     start_time:Optional[datetime] = None
@@ -146,7 +164,7 @@ if __name__ == "__main__":
                     position_ids.remove(trailed_order)
 
         # delay (secs)
-        time.sleep(0.1)
+        time.sleep(0.06)
 
         # set datetime to now
         now:datetime = datetime.now() + timezone_diff
@@ -183,7 +201,7 @@ if __name__ == "__main__":
             # then append the position id to the positions_id
             # list
             if getattr(Strategy, STRATEGY)()['buy'](rates_df.iloc[:-1, :]) and \
-                SupportResistance.is_near_support(rates_df.iloc[:-1, :], sr_treshold):
+                on_support(rates_df.iloc[:-1, :], p=SR_PROBABILITY, treshold=sr_treshold):
                 order = make_trade(
                     symbol = SYMBOL, 
                     buy = True, 
@@ -204,7 +222,7 @@ if __name__ == "__main__":
             # trade then append the position id to the positions_id
             # list
             elif getattr(Strategy, STRATEGY)()['sell'](rates_df.iloc[:-1, :]) and \
-                SupportResistance.is_near_resistance(rates_df.iloc[:-1, :], sr_treshold):
+                on_resistance(rates_df.iloc[:-1, :], p=SR_PROBABILITY, treshold=sr_treshold):
                 order = make_trade(
                     symbol = SYMBOL, 
                     buy = False, 
