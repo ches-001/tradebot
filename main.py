@@ -217,17 +217,23 @@ if __name__ == "__main__":
 
         # check if new session has started by the current time, and initialise trade
         if start_time != current_time:
+            
+            #input dateframe for strategies
+            input_df:pd.DataFrame = rates_df.iloc[:-1, :]
 
-            start_time = current_time
+            #compute latest ATR past candle sticks prior to current one
+            if USE_ATR: atr_value = compute_latest_atr(input_df)
 
-            #compute latest ATR
-            if USE_ATR: atr_value = compute_latest_atr(rates_df.iloc[:-1, :])
+            # Tolu strategy works with the signal being picked up in real-time, rather
+            # than awaiting a 3rd candle stick to form
+            if STRATEGY == 'tolu': input_df:pd.DataFrame = rates_df.iloc[:, :]
+            else: start_time = current_time
 
             # check if condition for buying is satisfied and trade
             # then append the position id to the positions_id
             # list
-            if getattr(Strategy, STRATEGY)()['buy'](rates_df.iloc[:-1, :]) and \
-                at_support(rates_df.iloc[:-1, :], p=SR_LIKELIHOOD, threshold=SR_THRESHOLD):
+            if getattr(Strategy, STRATEGY)()['buy'](input_df) and \
+                at_support(input_df, p=SR_LIKELIHOOD, threshold=SR_THRESHOLD):
                 order = make_trade(
                     symbol = SYMBOL, 
                     buy = True, 
@@ -243,12 +249,14 @@ if __name__ == "__main__":
                     log_open_order(order, buy=True)
                     position_ids.append(order.order)
 
+                if STRATEGY == 'tolu': start_time = current_time
+
 
             # likewise, check if condition for selling is satisfied and
             # trade then append the position id to the positions_id
             # list
-            elif getattr(Strategy, STRATEGY)()['sell'](rates_df.iloc[:-1, :]) and \
-                at_resistance(rates_df.iloc[:-1, :], p=SR_LIKELIHOOD, threshold=SR_THRESHOLD):
+            elif getattr(Strategy, STRATEGY)()['sell'](input_df) and \
+                at_resistance(input_df, p=SR_LIKELIHOOD, threshold=SR_THRESHOLD):
                 order = make_trade(
                     symbol = SYMBOL, 
                     buy = False, 
@@ -263,3 +271,5 @@ if __name__ == "__main__":
                 if order.order != 0:
                     log_open_order(order, buy=False)
                     position_ids.append(order.order)
+
+                if STRATEGY == 'tolu': start_time = current_time
