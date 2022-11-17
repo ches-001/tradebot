@@ -49,6 +49,19 @@ class Strategy:
         return {'buy':composite_strategy_buy, 'sell':composite_strategy_sell}
 
 
+#available times
+AVAIALBLE_TIMEFRAMES:dict = {
+    'M1':(mt5.TIMEFRAME_M1, 1),
+    'M2':(mt5.TIMEFRAME_M2, 2),
+    'M3':(mt5.TIMEFRAME_M3, 3),
+    'M4':(mt5.TIMEFRAME_M4, 4),
+    'M5':(mt5.TIMEFRAME_M5, 5),
+    'M10':(mt5.TIMEFRAME_M10, 10),
+    'M12':(mt5.TIMEFRAME_M12, 12),
+    'M15':(mt5.TIMEFRAME_M15, 15),
+}
+
+
 # this function returns true (p x 100)% of the times, and verifys
 # that the index is at the support (100 - (p-100))% of the times
 def at_support(df:pd.DataFrame, p:float=0.5, **kwargs)->bool:
@@ -77,15 +90,22 @@ if __name__ == "__main__":
 
     #trade arguments
     parser.add_argument('--symbol', type=str, default='EURUSD', metavar='', help='Trade symbol')
-    parser.add_argument('--volume', type=float,default=10.0, metavar='', help='Volume to trade')
+    parser.add_argument('--volume', type=float,default=1.0, metavar='', help='Volume to trade')
     parser.add_argument('--deviation', type=int, default=0, metavar='', help='Maximum acceptable deviation from the requested price')
     parser.add_argument('--unit_pip', type=float, default=1e-5, metavar='', help='Value of 1 pip for symbol')
     parser.add_argument('--use_atr', type=int, choices=[0, 1], default=0, metavar='', help='Use Average True Return (ATR) to compute stop loss, trail and take profit. Note that when set to True, the unit_pip value will be set to the most recent ATR value')
     parser.add_argument('--default_sl', type=float, default=4.0, metavar='', help='Default stop loss value (in pip)')
     parser.add_argument('--max_sl_dist', type=float, default=4.0, metavar='', help='Maximum distance between current price and stop loss (in pip)')
-    parser.add_argument('--sl_trail', type=float, default=4.0, metavar='', help='Stop loss trail value (in pip)')
-    parser.add_argument('--default_tp', type=float, default=0.0, metavar='', help='Take profit value (in pip)')
+    parser.add_argument('--sl_trail', type=float, default=0.0, metavar='', help='Stop loss trail value (in pip)')
+    parser.add_argument('--default_tp', type=float, default=8.0, metavar='', help='Take profit value (in pip)')
     parser.add_argument('--strategy', type=str, default='tolu', metavar='', help='Strategy to use: Options(tolu, engulf, rejection, composite)')
+    parser.add_argument('--timeframe', type=str, default='M1', choices=list(AVAIALBLE_TIMEFRAMES.keys()), metavar='', help='Trade timeframe, \visit the help \menu for options')
+    parser.add_argument('--sr_likelihood', type=float, default=0.8, metavar='', help='likelihood score for support / resistance indicator utilisation.\
+        When set to 1 or close to 1, the bot will only pick the relevant signals only at supports and resistances, and the opposite when set to 0')
+    parser.add_argument('--sr_threshold', type=float, default=0.0002, metavar='', help='Threshold distance between candle stick that triggered a signal\
+        and the corresponding support / resistance line the signal was picked')
+    parser.add_argument('--period', type=int, default=15, metavar='', help='period of past timestamps to use for compute current statistical states')
+
     args = parser.parse_args()
 
 
@@ -118,6 +138,10 @@ if __name__ == "__main__":
     print(f'Trail SL Value:         {args.sl_trail}')
     print(f'Trade TP:               {args.default_tp}')
     print(f'Strategy:               {args.strategy}')
+    print(f'Timeframe:              {args.timeframe}')
+    print(f'SR likelihood           {args.sr_likelihood}')
+    print(f'SR contact treshold     {args.sr_threshold}')
+    print(f'Period:                 {args.period}')
     print(f'Bot Session start time: {datetime.now()}', '\n')
 
     # Parameters
@@ -132,17 +156,19 @@ if __name__ == "__main__":
     DEFAULT_TP:Optional[float] = args.default_tp                        # take profit points                                                           #
     STRATEGY:str = args.strategy                                        # strategy                                                                     #
     USE_ATR:bool = bool(args.use_atr)                                   # option for using atr instead of unit pip value                               #
-    SR_PROBABILITY:float = 0.5                                          # probability score that controls how support resistance indicators are used   #
+    TIMEFRAME:str = args.timeframe                                      # trade timeframe                                                              #     
+    SR_LIKELIHOOD:float = args.sr_likelihood                            # probability score that controls how support resistance indicators are used   #
+    SR_THRESHOLD:float = args.sr_threshold                              # minimum distance between signal candle and support / resistance line         #
+    PERIOD:int = args.period                                            # period of past timestamps to use for compute current statistical states      #
     ####################################################################################################################################################
 
     #utility variables for the event loop
     start_time:Optional[datetime] = None
     timezone_diff:timedelta = timedelta(hours=2)
-    lagtime:timedelta = timedelta(minutes=15)
+    lagtime:timedelta = timedelta(minutes=AVAIALBLE_TIMEFRAMES[TIMEFRAME][1]*PERIOD)
     position_ids:List[int] = []
-    session_profit:float = 0
+    session_profit:float = 0.0
     atr_value:Optional[float] = None
-    sr_treshold:float = 0.2
 
     while True:
         
@@ -174,7 +200,7 @@ if __name__ == "__main__":
         # time difference is incorrectly set, or when the market is closed.
         try:
             # get last 2 sessions + current session and convert to dataframe
-            rates:np.array = mt5.copy_rates_range(SYMBOL, mt5.TIMEFRAME_M1, (now - lagtime), now)
+            rates:np.array = mt5.copy_rates_range(SYMBOL, AVAIALBLE_TIMEFRAMES[TIMEFRAME][0], (now - lagtime), now)
             rates_df:pd.DataFrame = pd.DataFrame(rates)
 
             # if no time is set (bot just started), set to latest time in rates_df
@@ -201,7 +227,7 @@ if __name__ == "__main__":
             # then append the position id to the positions_id
             # list
             if getattr(Strategy, STRATEGY)()['buy'](rates_df.iloc[:-1, :]) and \
-                at_support(rates_df.iloc[:-1, :], p=SR_PROBABILITY, treshold=sr_treshold):
+                at_support(rates_df.iloc[:-1, :], p=SR_LIKELIHOOD, threshold=SR_THRESHOLD):
                 order = make_trade(
                     symbol = SYMBOL, 
                     buy = True, 
@@ -222,7 +248,7 @@ if __name__ == "__main__":
             # trade then append the position id to the positions_id
             # list
             elif getattr(Strategy, STRATEGY)()['sell'](rates_df.iloc[:-1, :]) and \
-                at_resistance(rates_df.iloc[:-1, :], p=SR_PROBABILITY, treshold=sr_treshold):
+                at_resistance(rates_df.iloc[:-1, :], p=SR_LIKELIHOOD, threshold=SR_THRESHOLD):
                 order = make_trade(
                     symbol = SYMBOL, 
                     buy = False, 

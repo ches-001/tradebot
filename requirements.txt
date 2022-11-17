@@ -3,3 +3,5 @@ numpy
 MetaTrader5
 matplotlib
 backtester
+PyQt6
+pyqt6-tools

@@ -1,0 +1,17 @@
+{
+    "login": "51028339",
+    "server": "ICMarketsSC-Demo",
+    "symbol": "XAUUSD",
+    "volume": "2.0",
+    "deviation": "0",
+    "unit_pip": "0.01",
+    "default_sl": "30",
+    "max_sl_dist": "30",
+    "sl_trail": "10",
+    "default_tp": "60",
+    "sr_likelihood": "0.7",
+    "sr_threshold": "0.3",
+    "use_atr": true,
+    "strategy": "rejection",
+    "timeframe": "M1"
+}

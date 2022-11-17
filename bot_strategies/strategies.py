@@ -175,9 +175,9 @@ class Rejection:
 class SupportResistance:
 
     @staticmethod
-    def boundary_trimer(boundaries:List[float], idxs:List[int], treshold:float)->Tuple[List[float], List[int]]:
+    def boundary_trimer(boundaries:List[float], idxs:List[int], threshold:float)->Tuple[List[float], List[int]]:
         r"""
-        checks if boundary values are close to each other by some treshold and
+        checks if boundary values are close to each other by some threshold and
         trims them appropriately.
 
         parameters
@@ -194,7 +194,7 @@ class SupportResistance:
         new_idxs:List[int] = []
 
         for i, b1 in enumerate(boundaries):
-            if np.sum([abs(b1 - y) < treshold for y in new_boundaries]) == 0:
+            if np.sum([abs(b1 - y) < threshold for y in new_boundaries]) == 0:
                 new_boundaries.append(b1)
                 new_idxs.append(idxs[i])
 
@@ -275,8 +275,8 @@ class SupportResistance:
                 supports.append(df['low'].iloc[i])
                 support_idxs.append(i)
 
-        space_treshold:float = np.mean(df['high'] - df['low'])
-        return SupportResistance.boundary_trimer(supports, support_idxs, space_treshold)
+        space_threshold:float = np.mean(df['high'] - df['low'])
+        return SupportResistance.boundary_trimer(supports, support_idxs, space_threshold)
 
     @staticmethod
     def get_resistances(df:pd.DataFrame, n1:int=2, n2:int=2)->Tuple[List[float], List[int]]:
@@ -307,20 +307,20 @@ class SupportResistance:
                 resistances.append(df['high'].iloc[i])
                 resistance_idxs.append(i)
 
-        space_treshold:float = np.mean(df['high'] - df['low'])
-        return SupportResistance.boundary_trimer(resistances, resistance_idxs, space_treshold)
+        space_threshold:float = np.mean(df['high'] - df['low'])
+        return SupportResistance.boundary_trimer(resistances, resistance_idxs, space_threshold)
 
     @staticmethod
-    def is_near_support(df:pd.DataFrame, treshold:float, idx:int=-1):
+    def is_near_support(df:pd.DataFrame, threshold:float, idx:int=-1):
         r"""
         check if a candle of interest is close to a support level by some
-        treshold
+        threshold
 
         parameters
         -------------
         df: (pandas.core.frame.DataFrame) - input dataframe
 
-        treshold: (float) - treshold value that defines what near a support is
+        threshold: (float) - threshold value that defines what near a support is
 
         idx: (int) - index of candle of interest
             
@@ -340,24 +340,24 @@ class SupportResistance:
         closest_support:float = min(supports, key=lambda x : abs(x - h))
 
         c1:bool = h > closest_support and max(o, c) > closest_support
-        c2:bool = abs(l - closest_support) <= treshold
-        c3:bool = abs(min(o, c) - closest_support) <= treshold
+        c2:bool = abs(l - closest_support) <= threshold
+        c3:bool = abs(min(o, c) - closest_support) <= threshold
         
         if c1 and (c2 or c3):return True
         return False
 
 
     @staticmethod
-    def is_near_resistance(df:pd.DataFrame, treshold:float, idx:int=-1):
+    def is_near_resistance(df:pd.DataFrame, threshold:float, idx:int=-1):
         r"""
         check if a candle of interest is close to a resistance level by some
-        treshold
+        threshold
 
         parameters
         -------------
         df: (pandas.core.frame.DataFrame) - input dataframe
 
-        treshold: (float) - treshold value that defines what near a resistance is
+        threshold: (float) - threshold value that defines what near a resistance is
 
         idx: (int) - index of candle of interest
             
@@ -377,8 +377,8 @@ class SupportResistance:
         closest_resistance:float = min(resistances, key=lambda x : abs(x - h))
 
         c1:bool = l < closest_resistance and min(o, c) < closest_resistance
-        c2:bool = abs(h - closest_resistance) <= treshold
-        c3:bool = abs(max(o, c) - closest_resistance) <= treshold
+        c2:bool = abs(h - closest_resistance) <= threshold
+        c3:bool = abs(max(o, c) - closest_resistance) <= threshold
 
         if c1 and (c2 or c3):return True
         return False

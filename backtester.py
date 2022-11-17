@@ -12,7 +12,7 @@ from main import at_resistance, at_support
 #Base Strategy Class
 class BaseStrategyCase(Strategy):
     unit_pip:Optional[float] = None
-    sr_treshold:Optional[float] = None
+    sr_threshold:Optional[float] = None
     default_sl_points:float = 0.4
     sr_probability:float = 0.2
 
@@ -49,14 +49,14 @@ class ToluStrategyCase(BaseStrategyCase):
 
         if len(df) >= self.offset:
             self.unit_pip = compute_latest_atr(df.iloc[:-1, :])
-            self.sr_treshold = self.unit_pip * 0.5
+            self.sr_threshold = self.unit_pip * 0.5
             if Tolu.is_bullish_trade(df.iloc[:-1, :]) and \
-                at_support(df.iloc[:-1, :], p=self.sr_probability, treshold=self.sr_treshold):
+                at_support(df.iloc[:-1, :], p=self.sr_probability, threshold=self.sr_threshold):
                 sl:float = current_price - (self.unit_pip * self.default_sl_points)
                 self.buy(sl=sl)
 
             elif Tolu.is_bearish_trade(df.iloc[:-1, :]) and \
-                at_resistance(df.iloc[:-1, :], p=self.sr_probability, treshold=self.sr_treshold):
+                at_resistance(df.iloc[:-1, :], p=self.sr_probability, threshold=self.sr_threshold):
                 sl:float = current_price + (self.unit_pip * self.default_sl_points)
                 self.sell(sl=sl)
 
@@ -87,14 +87,14 @@ class EngulfStrategyCase(BaseStrategyCase):
 
         if len(df) >= self.offset:
             self.unit_pip = compute_latest_atr(df.iloc[:-1, :])
-            self.sr_treshold = self.unit_pip * 0.5
+            self.sr_threshold = self.unit_pip * 0.5
             if Engulf.is_bullish_engulf(df.iloc[:-1, :]) and \
-                at_support(df.iloc[:-1, :], p=self.sr_probability, treshold=self.sr_treshold):
+                at_support(df.iloc[:-1, :], p=self.sr_probability, threshold=self.sr_threshold):
                 sl:float = current_price - (self.unit_pip * self.default_sl_points)
                 self.buy(sl=sl)
 
             elif Engulf.is_bearish_engulf(df.iloc[:-1, :]) and \
-                at_resistance(df.iloc[:-1, :], p=self.sr_probability, treshold=self.sr_treshold):
+                at_resistance(df.iloc[:-1, :], p=self.sr_probability, threshold=self.sr_threshold):
                 sl:float = current_price + (self.unit_pip * self.default_sl_points)
                 self.sell(sl=sl)
 
@@ -125,14 +125,14 @@ class RejectionStrategyCase(BaseStrategyCase):
 
         if len(df) >= self.offset:
             self.unit_pip = compute_latest_atr(df.iloc[:-1, :])
-            self.sr_treshold = self.unit_pip * 0.5
+            self.sr_threshold = self.unit_pip * 0.5
             if Rejection.is_bullish_rejection(df.iloc[:-1, :]) and \
-                at_support(df.iloc[:-1, :], p=self.sr_probability, treshold=self.sr_treshold):
+                at_support(df.iloc[:-1, :], p=self.sr_probability, threshold=self.sr_threshold):
                 sl:float = current_price - (self.unit_pip * self.default_sl_points)
                 self.buy(sl=sl)
 
             elif Engulf.is_bearish_engulf(df.iloc[:-1, :]) and \
-                at_resistance(df.iloc[:-1, :], p=self.sr_probability, treshold=self.sr_treshold):
+                at_resistance(df.iloc[:-1, :], p=self.sr_probability, threshold=self.sr_threshold):
                 sl:float = current_price + (self.unit_pip * self.default_sl_points)
                 self.sell(sl=sl)
 
@@ -164,12 +164,12 @@ class CompositeStrategyCase(BaseStrategyCase):
 
         if len(df) >= self.offset:
             self.unit_pip = compute_latest_atr(df.iloc[:-1, :])
-            self.sr_treshold = self.unit_pip * 0.5
+            self.sr_threshold = self.unit_pip * 0.5
             if (
                 Rejection.is_bullish_rejection(df.iloc[:-1, :]) or
                 Engulf.is_bullish_engulf(df.iloc[:-1, :]) or
                 Tolu.is_bullish_trade(df.iloc[:-1, :])) and \
-                at_support(df.iloc[:-1, :], p=self.sr_probability, treshold=self.sr_treshold):
+                at_support(df.iloc[:-1, :], p=self.sr_probability, threshold=self.sr_threshold):
                 sl:float = current_price - (self.unit_pip * self.default_sl_points)
                 self.buy(sl=sl)
 
@@ -177,7 +177,7 @@ class CompositeStrategyCase(BaseStrategyCase):
                 Rejection.is_bearish_rejection(df.iloc[:-1, :]) or
                 Engulf.is_bearish_engulf(df.iloc[:-1, :]) or
                 Tolu.is_bearish_trade(df.iloc[:-1, :])) and \
-                at_resistance(df.iloc[:-1, :], p=self.sr_probability, treshold=self.sr_treshold):
+                at_resistance(df.iloc[:-1, :], p=self.sr_probability, threshold=self.sr_threshold):
                 sl:float = current_price + (self.unit_pip * self.default_sl_points)
                 self.sell(sl=sl)
 
