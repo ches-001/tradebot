@@ -3,7 +3,7 @@ from PyQt6.QtWidgets import QApplication, QWidget, QLineEdit, QCheckBox, QComboB
 from PyQt6.QtGui import QIntValidator, QDoubleValidator, QValidator
 from PyQt6 import uic
 from typing import Dict, List, Optional, Any, Iterable
-from main import AVAIALBLE_TIMEFRAMES
+from main import AVAIALBLE_TIMEFRAMES, BOT_DETAILS
 
 class BotApplication(QWidget):
     GUR_PATH = os.path.join('GUIs', 'bot-gui.ui')
@@ -15,7 +15,21 @@ class BotApplication(QWidget):
         super(BotApplication, self).__init__()
         uic.loadUi(self.GUR_PATH, self)
 
-        self.setWindowTitle('Trade Bot')
+        self.setWindowTitle(f"{BOT_DETAILS['BOT_NAME']} - Trade Bot. Version - ({BOT_DETAILS['VERSION']})")
+
+        self.strategy_title.setStyleSheet(
+            '''
+            font-size:20px;
+            font-weight:bold;
+            '''
+        )
+
+        self.auth_title.setStyleSheet(
+            '''
+            font-size:20px;
+            font-weight:bold;
+            '''
+        )
 
         self._strategies = ['tolu', 'engulf', 'rejection', 'composite']
         self.populateCombobox('strategy', self._strategies)
@@ -59,6 +73,7 @@ class BotApplication(QWidget):
 
 
     def validateInput(self, input:Any, rule:Optional[QValidator])->bool:
+        if len(input) == 0:return False
         if rule is None:return True
         return rule.validate(input, 10)[0] == QValidator.State.Acceptable
     
@@ -79,8 +94,9 @@ class BotApplication(QWidget):
             'max_sl_dist': (self.max_sl_dist.text(), QDoubleValidator()),
             'sl_trail': (self.sl_trail.text(), QDoubleValidator()),
             'default_tp': (self.default_tp.text(), QDoubleValidator()),
-            'sr_likelihood':(self.sr_likelihood.text(), None),
-            'sr_threshold':(self.sr_threshold.text(), None)
+            'sr_likelihood':(self.sr_likelihood.text(), QDoubleValidator()),
+            'sr_threshold':(self.sr_threshold.text(), QDoubleValidator()),
+            'period':(self.period.text(), QIntValidator())
         }
 
         #validate input parameters
@@ -90,7 +106,7 @@ class BotApplication(QWidget):
             validation_list.append(is_valid)
             if not is_valid:
                 getattr(self, key).setText('')
-                print(key, 'wrong')
+                getattr(self, key).setPlaceholderText("Required / incorrect")
 
         #save input details
         if all(validation_list) and self.save_config.isChecked():
@@ -101,18 +117,28 @@ class BotApplication(QWidget):
             config['timeframe'] = self.timeframe.currentText()
             self.saveConfig(config)
 
-        # #send params to main program to run on terminal
-        # if all(validation_list):
-        #     print(params)
-        #     command:str = f"""
-        #         python main.py {params['login'][0]} {params['password'][0]} {params['server'][0]}
-        #         --use_atr={int(self.use_atr.isChecked())} --unit_pip={params['unit_pip'][0]}
-        #         --default_sl={params['default_sl'][0]} --max_sl_dist={params['max_sl_dist'][0]} 
-        #         --sl_trail={params['sl_trail'][0]} --volume={['volume'][0]} --deviation={params['deviation'][0]}
-        #         --strategy=composite --symbol={params['symbol'][0]} --default_tp={params['default_tp'][0]}
-        #     """
-        #     os.system(command)
-
+        #send params to main program to run on terminal
+        if all(validation_list):
+            # `Tradebot-cli` should be changed to 'main.py' when developing, and only
+            # used when building program to exe
+            command:str = f"""
+                start /B start cmd.exe @cmd /k {BOT_DETAILS['BOT_NAME']}-cli {params['login'][0]} {params['password'][0]} {params['server'][0]}
+                --use_atr={int(self.use_atr.isChecked())}
+                --unit_pip={params['unit_pip'][0]}
+                --default_sl={params['default_sl'][0]} 
+                --max_sl_dist={params['max_sl_dist'][0]} 
+                --sl_trail={params['sl_trail'][0]} 
+                --volume={['volume'][0]} 
+                --deviation={params['deviation'][0]}
+                --strategy=composite 
+                --symbol={params['symbol'][0]} 
+                --default_tp={params['default_tp'][0]}
+                --timeframe={self.timeframe.currentText()}
+                --sr_likelihood={params['sr_likelihood'][0]}
+                --sr_threshold={params['sr_threshold'][0]}
+                --period={params['period'][0]}
+            """
+            os.system(command)
 
         
 if __name__ == '__main__':

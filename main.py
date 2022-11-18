@@ -10,9 +10,15 @@ import pandas as pd
 import numpy as np
 import MetaTrader5 as mt5
 from datetime import datetime, timedelta
-from typing import Union, Optional, List
+from typing import Union, Optional, List, Dict
 from bot_strategies import Tolu, Engulf, Rejection, SupportResistance
 from utils import *
+
+# bot details
+BOT_DETAILS:Dict[str, str] = {
+    'BOT_NAME' : "Peinjo",
+    'VERSION' : '0.0.1',
+}
 
 # chain all buy strategies into one to form a composite
 # buy strategy
@@ -78,10 +84,11 @@ def at_resistance(df:pd.DataFrame, p:float=0.5, **kwargs)->bool:
 
 
 if __name__ == "__main__":
-    APP_NAME = 'MetaTrader 5 Trade Bot'
+    APP_NAME:str = f"{BOT_DETAILS['BOT_NAME']} - (A MetaTrader 5 Trade Bot)"
+    VERSION:str = BOT_DETAILS['VERSION']
 
     # CLI Parsed parameters
-    parser = argparse.ArgumentParser(description=APP_NAME)
+    parser = argparse.ArgumentParser(description=f'{APP_NAME}. Version - ({VERSION})')
 
     #login arguments
     parser.add_argument('login', type=int, metavar='login', help='Login ID')
@@ -102,7 +109,7 @@ if __name__ == "__main__":
     parser.add_argument('--timeframe', type=str, default='M1', choices=list(AVAIALBLE_TIMEFRAMES.keys()), metavar='', help='Trade timeframe, \visit the help \menu for options')
     parser.add_argument('--sr_likelihood', type=float, default=0.8, metavar='', help='likelihood score for support / resistance indicator utilisation.\
         When set to 1 or close to 1, the bot will only pick the relevant signals only at supports and resistances, and the opposite when set to 0')
-    parser.add_argument('--sr_threshold', type=float, default=0.0002, metavar='', help='Threshold distance between candle stick that triggered a signal\
+    parser.add_argument('--sr_threshold', type=float, default=3.0, metavar='', help='Threshold distance (in pips) between candle stick that triggered a signal\
         and the corresponding support / resistance line the signal was picked')
     parser.add_argument('--period', type=int, default=15, metavar='', help='period of past timestamps to use for compute current statistical states')
 
@@ -128,6 +135,7 @@ if __name__ == "__main__":
 
     # initial console comments
     print(APP_NAME, '\n')
+    print(f"Version:                {BOT_DETAILS['VERSION']}")
     print(f'Trade Symbol:           {args.symbol}')
     print(f'Trade Volume:           {args.volume}')
     print(f'Trade Deviation:        {args.deviation}')
@@ -158,7 +166,7 @@ if __name__ == "__main__":
     USE_ATR:bool = bool(args.use_atr)                                   # option for using atr instead of unit pip value                               #
     TIMEFRAME:str = args.timeframe                                      # trade timeframe                                                              #     
     SR_LIKELIHOOD:float = args.sr_likelihood                            # probability score that controls how support resistance indicators are used   #
-    SR_THRESHOLD:float = args.sr_threshold                              # minimum distance between signal candle and support / resistance line         #
+    SR_THRESHOLD:float = args.sr_threshold * UNIT_PIP                   # minimum distance between signal candle and support / resistance line         #
     PERIOD:int = args.period                                            # period of past timestamps to use for compute current statistical states      #
     ####################################################################################################################################################
 
