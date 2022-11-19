@@ -86,7 +86,7 @@ class BotApplication(QWidget):
     
 
     def showHelpMenu(self):
-        command:str = f'start /B start cmd.exe @cmd /k {TO_RUN} -h'
+        command:str = f'start /B start cmd /k {TO_RUN} -h'
         os.system(command)
 
     def startEvent(self):
@@ -131,21 +131,24 @@ class BotApplication(QWidget):
         #send params to main program to run on terminal
         if all(validation_list):
             command:str = f"""
-                start /B start cmd.exe @cmd /k {TO_RUN} {params['login'][0]} {params['password'][0]} {params['server'][0]}
-                --use_atr={int(self.use_atr.isChecked())}
-                --unit_pip={params['unit_pip'][0]}
-                --default_sl={params['default_sl'][0]} 
-                --max_sl_dist={params['max_sl_dist'][0]} 
-                --sl_trail={params['sl_trail'][0]} 
-                --volume={['volume'][0]} 
-                --deviation={params['deviation'][0]}
-                --strategy=composite 
-                --symbol={params['symbol'][0]} 
-                --default_tp={params['default_tp'][0]}
-                --timeframe={self.timeframe.currentText()}
-                --sr_likelihood={params['sr_likelihood'][0]}
-                --sr_threshold={params['sr_threshold'][0]}
-                --period={params['period'][0]}
+                start /B start cmd /k {TO_RUN} \
+                {params['login'][0]} \
+                {params['password'][0]} \
+                {params['server'][0]} \
+                --use_atr={int(self.use_atr.isChecked())} \
+                --unit_pip={(params['unit_pip'][0])} \
+                --default_sl={params['default_sl'][0]} \
+                --max_sl_dist={params['max_sl_dist'][0]} \
+                --sl_trail={params['sl_trail'][0]} \
+                --volume={params['volume'][0]} \
+                --deviation={params['deviation'][0]} \
+                --strategy={self.strategy.currentText()} \
+                --symbol={params['symbol'][0]} \
+                --default_tp={params['default_tp'][0]} \
+                --timeframe={self.timeframe.currentText()} \
+                --sr_likelihood={params['sr_likelihood'][0]} \
+                --sr_threshold={params['sr_threshold'][0]} \
+                --period={params['period'][0]} \
             """
             os.system(command)
 
