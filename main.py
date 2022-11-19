@@ -5,7 +5,7 @@
 # Phone no: +2349057900367                                                                 #
 ############################################################################################
 
-import time, sys, argparse
+import time, sys, argparse, os
 import pandas as pd
 import numpy as np
 import MetaTrader5 as mt5
@@ -16,8 +16,10 @@ from utils import *
 
 # bot details
 BOT_DETAILS:Dict[str, str] = {
-    'BOT_NAME' : "Peinjo",
-    'VERSION' : '0.0.1',
+    'BOT_NAME': "Peinjo",
+    'VERSION': '0.0.1',
+    'BOT_ICON': os.path.join('app_icon', 'icon.ico'),
+    'COPYRIGHTS_INFO': '© Tolu, Mekkix and Ches. All rights reserved.',
 }
 
 # chain all buy strategies into one to form a composite
@@ -88,7 +90,7 @@ if __name__ == "__main__":
     VERSION:str = BOT_DETAILS['VERSION']
 
     # CLI Parsed parameters
-    parser = argparse.ArgumentParser(description=f'{APP_NAME}. Version - ({VERSION})')
+    parser = argparse.ArgumentParser(description=f"{APP_NAME}. Version - ({VERSION}). \n {BOT_DETAILS['COPYRIGHTS_INFO']}")
 
     #login arguments
     parser.add_argument('login', type=int, metavar='login', help='Login ID')

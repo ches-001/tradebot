@@ -1,21 +1,27 @@
 import sys, os, json
 from PyQt6.QtWidgets import QApplication, QWidget, QLineEdit, QCheckBox, QComboBox
-from PyQt6.QtGui import QIntValidator, QDoubleValidator, QValidator
+from PyQt6.QtGui import QIntValidator, QDoubleValidator, QValidator, QIcon
 from PyQt6 import uic
 from typing import Dict, List, Optional, Any, Iterable
 from main import AVAIALBLE_TIMEFRAMES, BOT_DETAILS
 
+# BOT_DETAILS['BOT_NAME'] should be changed to 'python main.py' when developing, and only
+# used when building program to exe
+TO_RUN:str = 'python main.py' if os.path.isfile('main.py') else f"{BOT_DETAILS['BOT_NAME']}-cli"
+
 class BotApplication(QWidget):
-    GUR_PATH = os.path.join('GUIs', 'bot-gui.ui')
-    SAVE_CONFIG_DIR = 'saved_config' 
-    SAVE_CONFIG_FILENAME = 'config.json' 
-    SAVE_CONFIG_PATH = os.path.join(SAVE_CONFIG_DIR, SAVE_CONFIG_FILENAME)
+    GUR_PATH:str = os.path.join('GUIs', 'bot-gui.ui')
+    SAVE_CONFIG_DIR:str = 'saved_config' 
+    SAVE_CONFIG_FILENAME:str = 'config.json' 
+    SAVE_CONFIG_PATH:str = os.path.join(SAVE_CONFIG_DIR, SAVE_CONFIG_FILENAME)
 
     def __init__(self):
         super(BotApplication, self).__init__()
         uic.loadUi(self.GUR_PATH, self)
 
-        self.setWindowTitle(f"{BOT_DETAILS['BOT_NAME']} - Trade Bot. Version - ({BOT_DETAILS['VERSION']})")
+        self.setWindowIcon(QIcon(BOT_DETAILS['BOT_ICON']))
+        self.setWindowTitle(
+            f"{BOT_DETAILS['BOT_NAME']} - Trade Bot. Version - ({BOT_DETAILS['VERSION']}). {BOT_DETAILS['COPYRIGHTS_INFO']}")
 
         self.strategy_title.setStyleSheet(
             '''
@@ -35,7 +41,8 @@ class BotApplication(QWidget):
         self.populateCombobox('strategy', self._strategies)
         self.populateCombobox('timeframe', AVAIALBLE_TIMEFRAMES.keys())
         self.setConfig() #set saved config params
-        self.button.clicked.connect(self.startEvent)
+        self.start_button.clicked.connect(self.startEvent)
+        self.help_button.clicked.connect(self.showHelpMenu)
 
 
     def populateCombobox(self, combobox_name:str, items:Iterable):
@@ -66,7 +73,7 @@ class BotApplication(QWidget):
         if not os.path.isdir(self.SAVE_CONFIG_DIR):
             os.mkdir(self.SAVE_CONFIG_DIR)
 
-        params = params.copy()
+        params:dict = params.copy()
         if 'password' in params.keys():
             params.pop('password')
         return json.dump(params, open(self.SAVE_CONFIG_PATH, 'w'), indent = 6)
@@ -77,6 +84,10 @@ class BotApplication(QWidget):
         if rule is None:return True
         return rule.validate(input, 10)[0] == QValidator.State.Acceptable
     
+
+    def showHelpMenu(self):
+        command:str = f'start /B start cmd.exe @cmd /k {TO_RUN} -h'
+        os.system(command)
 
     def startEvent(self):
         params:Dict[tuple] = {
@@ -119,10 +130,8 @@ class BotApplication(QWidget):
 
         #send params to main program to run on terminal
         if all(validation_list):
-            # `Tradebot-cli` should be changed to 'main.py' when developing, and only
-            # used when building program to exe
             command:str = f"""
-                start /B start cmd.exe @cmd /k {BOT_DETAILS['BOT_NAME']}-cli {params['login'][0]} {params['password'][0]} {params['server'][0]}
+                start /B start cmd.exe @cmd /k {TO_RUN} {params['login'][0]} {params['password'][0]} {params['server'][0]}
                 --use_atr={int(self.use_atr.isChecked())}
                 --unit_pip={params['unit_pip'][0]}
                 --default_sl={params['default_sl'][0]} 

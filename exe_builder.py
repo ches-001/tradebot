@@ -13,9 +13,11 @@ APP_DIR:str = 'app'
 VERSION:str = f'version-{args.version_no}'
 WORKING_DIR:str = os.path.join(APP_DIR, VERSION)
 BUILD_DIRNAME:str = f'{args.app_build}-build'
-DIST_DIRNAME = 'dist'
+DIST_DIRNAME:str = 'dist'
+APP_ICON_DIR = 'app_icon'
 
 if not os.path.isdir(WORKING_DIR): os.makedirs(WORKING_DIR)
+copy_tree(APP_ICON_DIR, os.path.join(WORKING_DIR, os.path.join(DIST_DIRNAME, APP_ICON_DIR)))
 
 COMMAND_OPTS:list = [
     '--onefile',
@@ -23,6 +25,7 @@ COMMAND_OPTS:list = [
     '--workpath={path}'.format(path=os.path.join(WORKING_DIR, BUILD_DIRNAME)),
     '--specpath={path}'.format(path=WORKING_DIR),
     '--distpath={path}'.format(path=os.path.join(WORKING_DIR, DIST_DIRNAME)),
+    '--icon={image}'.format(image=os.path.join(DIST_DIRNAME, BOT_DETAILS['BOT_ICON'])),
     '--name={name}-{build}'.format(name=APP_NAME, build=args.app_build) if args.app_build=='cli' else '--name={name}'.format(name=APP_NAME),
 ]
 
