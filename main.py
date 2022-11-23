@@ -233,7 +233,7 @@ if __name__ == "__main__":
             #input dateframe for strategies
             input_df:pd.DataFrame = rates_df.iloc[:-1, :]
 
-            # compute latest ATR past candle sticks prior to current one
+            # compute the ATR of past candle sticks prior to current one
             # and set the multiplier to the atr value
             if USE_ATR: 
                 atr_value = compute_latest_atr(input_df)
