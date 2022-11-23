@@ -14,7 +14,7 @@ class BaseStrategyCase(Strategy):
     unit_pip:Optional[float] = None
     sr_threshold:float = 0.1
     default_sl_points:float = 1.5
-    default_tp_point:float = 3.2
+    default_tp_point:float = 4.5
     sr_probability:float = 0.0
     offset:int = 15
 

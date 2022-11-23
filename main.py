@@ -57,7 +57,7 @@ class Strategy:
         return {'buy':composite_strategy_buy, 'sell':composite_strategy_sell}
 
 
-#available times
+# available times
 AVAIALBLE_TIMEFRAMES:dict = {
     'M1':(mt5.TIMEFRAME_M1, 1),
     'M2':(mt5.TIMEFRAME_M2, 2),
@@ -92,26 +92,27 @@ if __name__ == "__main__":
     # CLI Parsed parameters
     parser = argparse.ArgumentParser(description=f"{APP_NAME}. Version - ({VERSION}). \n {BOT_DETAILS['COPYRIGHTS_INFO']}")
 
-    #login arguments
+    # login arguments
     parser.add_argument('login', type=int, metavar='login', help='Login ID')
     parser.add_argument('password', type=str, metavar='password', help='Password')
     parser.add_argument('server', type=str, metavar='server', help='Broker Server')
 
-    #trade arguments
+    # trade arguments
     parser.add_argument('--symbol', type=str, default='EURUSD', metavar='', help='Trade symbol')
     parser.add_argument('--volume', type=float,default=1.0, metavar='', help='Volume to trade')
     parser.add_argument('--deviation', type=int, default=0, metavar='', help='Maximum acceptable deviation from the requested price')
-    parser.add_argument('--unit_pip', type=float, default=1e-5, metavar='', help='Value of 1 pip for symbol')
-    parser.add_argument('--use_atr', type=int, choices=[0, 1], default=0, metavar='', help='Use Average True Return (ATR) to compute stop loss, trail and take profit. Note that when set to True, the unit_pip value will be set to the most recent ATR value')
-    parser.add_argument('--default_sl', type=float, default=4.0, metavar='', help='Default stop loss value (in pip)')
-    parser.add_argument('--max_sl_dist', type=float, default=4.0, metavar='', help='Maximum distance between current price and stop loss (in pip)')
-    parser.add_argument('--sl_trail', type=float, default=0.0, metavar='', help='Stop loss trail value (in pip)')
-    parser.add_argument('--default_tp', type=float, default=8.0, metavar='', help='Take profit value (in pip)')
+    parser.add_argument('--unit_pip', type=float, default=1e-5, metavar='', help='Value of 1 pip for symbol (necessary parameter if ATR is set to 0 (False))')
+    parser.add_argument('--use_atr', type=int, choices=[0, 1], default=0, metavar='', help='Use Average True Return (ATR) to compute stop loss, trail, \
+        take profit and sr_threshold. Note that when set to True, the unit_pip value will be set to the most recent ATR value')
+    parser.add_argument('--default_sl', type=float, default=4.0, metavar='', help='Default stop loss value (in pip / ATR)')
+    parser.add_argument('--max_sl_dist', type=float, default=4.0, metavar='', help='Maximum distance between current price and stop loss (in pip / ATR)')
+    parser.add_argument('--sl_trail', type=float, default=0.0, metavar='', help='Stop loss trail value (in pip / ATR)')
+    parser.add_argument('--default_tp', type=float, default=8.0, metavar='', help='Take profit value (in pip / ATR)')
     parser.add_argument('--strategy', type=str, default='tolu', metavar='', help='Strategy to use: Options(tolu, engulf, rejection, composite)')
     parser.add_argument('--timeframe', type=str, default='M1', choices=list(AVAIALBLE_TIMEFRAMES.keys()), metavar='', help='Trade timeframe, \visit the help \menu for options')
     parser.add_argument('--sr_likelihood', type=float, default=0.8, metavar='', help='likelihood score for support / resistance indicator utilisation.\
         When set to 1 or close to 1, the bot will only pick the relevant signals only at supports and resistances, and the opposite when set to 0')
-    parser.add_argument('--sr_threshold', type=float, default=3.0, metavar='', help='Threshold distance (in pips) between candle stick that triggered a signal\
+    parser.add_argument('--sr_threshold', type=float, default=3.0, metavar='', help='Threshold distance (in pips / ATR) between candle stick that triggered a signal\
         and the corresponding support / resistance line the signal was picked')
     parser.add_argument('--period', type=int, default=15, metavar='', help='period of past timestamps to use for compute current statistical states')
 
@@ -155,41 +156,42 @@ if __name__ == "__main__":
     print(f'Bot Session start time: {datetime.now()}', '\n')
 
     # Parameters
-    ####################################################################################################################################################
-    SYMBOL:str = args.symbol                                            # symbol                                                                       #
-    VOLUME:float = args.volume                                          # volume to trade                                                              #
-    DEVIATION:int = args.deviation                                      # allowable deviation for trade                                                #
-    UNIT_PIP:Optional[float] = args.unit_pip                            # unit pip value                                                               #
-    DEFAULT_SL:Optional[float] = args.default_sl                        # stop loss points                                                             #
-    MAX_DIST_SL:float = args.max_sl_dist                                # maximun distance between price and stop loss                                 #
-    TRAIL_AMOUNT:float = args.sl_trail                                  # icrement / decrement value for stop loss                                     #
-    DEFAULT_TP:Optional[float] = args.default_tp                        # take profit points                                                           #
-    STRATEGY:str = args.strategy                                        # strategy                                                                     #
-    USE_ATR:bool = bool(args.use_atr)                                   # option for using atr instead of unit pip value                               #
-    TIMEFRAME:str = args.timeframe                                      # trade timeframe                                                              #     
-    SR_LIKELIHOOD:float = args.sr_likelihood                            # probability score that controls how support resistance indicators are used   #
-    SR_THRESHOLD:float = args.sr_threshold * UNIT_PIP                   # minimum distance between signal candle and support / resistance line         #
-    PERIOD:int = args.period                                            # period of past timestamps to use for compute current statistical states      #
-    ####################################################################################################################################################
+    ###############################################################################################################################################################
+    SYMBOL:str = args.symbol                                            # symbol                                                                                  #
+    VOLUME:float = args.volume                                          # volume to trade                                                                         #
+    DEVIATION:int = args.deviation                                      # allowable deviation for trade                                                           #
+    UNIT_PIP:Optional[float] = args.unit_pip                            # unit pip value                                                                          #
+    DEFAULT_SL:Optional[float] = args.default_sl                        # stop loss points                                                                        #
+    MAX_DIST_SL:float = args.max_sl_dist                                # maximun distance between price and stop loss                                            #
+    TRAIL_AMOUNT:float = args.sl_trail                                  # icrement / decrement value for stop loss                                                #
+    DEFAULT_TP:Optional[float] = args.default_tp                        # take profit points                                                                      #
+    STRATEGY:str = args.strategy                                        # strategy                                                                                #
+    USE_ATR:bool = bool(args.use_atr)                                   # option for using atr instead of unit pip value                                          #
+    TIMEFRAME:str = args.timeframe                                      # trade timeframe                                                                         #     
+    SR_LIKELIHOOD:float = args.sr_likelihood                            # probability score that controls how support resistance indicators are used              #
+    SR_THRESHOLD:float = args.sr_threshold                              # minimum distance between signal candle and support / resistance line (in atr or pip)    #
+    PERIOD:int = args.period                                            # period of past timestamps to use for compute current statistical states                 #
+    ###############################################################################################################################################################
 
-    #utility variables for the event loop
+    # utility variables for the event loop
     start_time:Optional[datetime] = None
     timezone_diff:timedelta = timedelta(hours=2)
     lagtime:timedelta = timedelta(minutes=AVAIALBLE_TIMEFRAMES[TIMEFRAME][1]*PERIOD)
     position_ids:List[int] = []
     session_profit:float = 0.0
     atr_value:Optional[float] = None
+    # set price_multiplier to atr if USE_ATR == True, else set it to UNIT PIP
+    price_multiplier:Optional[float] = atr_value if (USE_ATR) else UNIT_PIP
 
     while True:
-        
         # trails stop loss for each ticket
-        if position_ids:
+        if len(position_ids) > 0:
             for id in position_ids:
                 trailed_order:Union[int, mt5.OrderSendResult] = trail_sl(
                     position_id=id, 
-                    default_sl_points=DEFAULT_SL * (atr_value if USE_ATR else UNIT_PIP), 
-                    max_dist_sl=MAX_DIST_SL * (atr_value if USE_ATR else UNIT_PIP), 
-                    trail_amount=TRAIL_AMOUNT * (atr_value if USE_ATR else UNIT_PIP))
+                    default_sl_points=DEFAULT_SL * price_multiplier, 
+                    max_dist_sl=MAX_DIST_SL * price_multiplier, 
+                    trail_amount=TRAIL_AMOUNT * price_multiplier)
 
                 if isinstance(trailed_order, int):
                     profit:float = check_profit(trailed_order)
@@ -231,8 +233,11 @@ if __name__ == "__main__":
             #input dateframe for strategies
             input_df:pd.DataFrame = rates_df.iloc[:-1, :]
 
-            #compute latest ATR past candle sticks prior to current one
-            if USE_ATR: atr_value = compute_latest_atr(input_df)
+            # compute latest ATR past candle sticks prior to current one
+            # and set the multiplier to the atr value
+            if USE_ATR: 
+                atr_value = compute_latest_atr(input_df)
+                price_multiplier = atr_value
 
             # Tolu strategy works with the signal being picked up in real-time, rather
             # than awaiting a 3rd candle stick to form
@@ -243,14 +248,14 @@ if __name__ == "__main__":
             # then append the position id to the positions_id
             # list
             if getattr(Strategy, STRATEGY)()['buy'](input_df) and \
-                at_support(input_df, p=SR_LIKELIHOOD, threshold=SR_THRESHOLD):
+                at_support(input_df, p=SR_LIKELIHOOD, threshold=SR_THRESHOLD * price_multiplier):
                 order = make_trade(
                     symbol = SYMBOL, 
                     buy = True, 
                     position_id = None, 
                     volume = VOLUME, 
-                    sl_points = DEFAULT_SL * (atr_value if USE_ATR else UNIT_PIP),
-                    tp_points = DEFAULT_TP * (atr_value if USE_ATR else UNIT_PIP),
+                    sl_points = DEFAULT_SL * price_multiplier,
+                    tp_points = DEFAULT_TP * price_multiplier,
                     deviation = DEVIATION)
                 
                 print(order.comment)
@@ -266,14 +271,14 @@ if __name__ == "__main__":
             # trade then append the position id to the positions_id
             # list
             elif getattr(Strategy, STRATEGY)()['sell'](input_df) and \
-                at_resistance(input_df, p=SR_LIKELIHOOD, threshold=SR_THRESHOLD):
+                at_resistance(input_df, p=SR_LIKELIHOOD, threshold=SR_THRESHOLD * price_multiplier):
                 order = make_trade(
                     symbol = SYMBOL, 
                     buy = False, 
                     position_id = None, 
                     volume = VOLUME, 
-                    sl_points = DEFAULT_SL * (atr_value if USE_ATR else UNIT_PIP),
-                    tp_points = DEFAULT_TP * (atr_value if USE_ATR else UNIT_PIP),
+                    sl_points = DEFAULT_SL * price_multiplier,
+                    tp_points = DEFAULT_TP * price_multiplier,
                     deviation = DEVIATION)
                 
                 print(order.comment)
