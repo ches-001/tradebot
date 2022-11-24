@@ -116,6 +116,7 @@ if __name__ == "__main__":
     parser.add_argument('--sr_threshold', type=float, default=3.0, metavar='', help='Threshold distance (in pips / ATR) between candle stick that triggered a signal\
         and the corresponding support / resistance line the signal was picked')
     parser.add_argument('--sr_period', type=int, default=60, metavar='', help='period of past timestamps to use for computing the support and resistance levels')
+    parser.add_argument('--timezone_diff', type=int, default=2, metavar='', help='Broker server timezone difference (hours)')
 
     args = parser.parse_args()
 
@@ -155,6 +156,7 @@ if __name__ == "__main__":
     print(f'SR likelihood           {args.sr_likelihood}')
     print(f'SR contact treshold     {args.sr_threshold}')
     print(f'SR Period:              {args.sr_period}')
+    print(f'Broker Timezone diff:   {args.timezone_diff} hours')
     print(f'Bot Session start time: {datetime.now()}', '\n')
 
     # Parameters
@@ -174,11 +176,12 @@ if __name__ == "__main__":
     SR_LIKELIHOOD:float = args.sr_likelihood                            # probability score that controls how support resistance indicators are used              #
     SR_THRESHOLD:float = args.sr_threshold                              # minimum distance between signal candle and support / resistance line (in atr or pip)    #
     SR_PERIOD:int = args.sr_period                                      # period of past timestamps to use for compute support and resistance levels              #
+    TIMEZONE_DIFF:int = args.timezone_diff                              # broker / server timezone difference (hours)                                             #
     ###############################################################################################################################################################
 
     # utility variables for the event loop
     start_time:Optional[datetime] = None
-    timezone_diff:timedelta = timedelta(hours=2)
+    timezone_diff:timedelta = timedelta(hours=TIMEZONE_DIFF)
     lagtime:timedelta = timedelta(minutes=AVAIALBLE_TIMEFRAMES[TIMEFRAME][1] * max(ATR_PERIOD, SR_PERIOD))
     position_ids:List[int] = []
     session_profit:float = 0.0

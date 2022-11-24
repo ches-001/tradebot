@@ -108,7 +108,8 @@ class BotApplication(QWidget):
             'atr_period':(self.atr_period.text(), QIntValidator()),
             'sr_likelihood':(self.sr_likelihood.text(), QDoubleValidator()),
             'sr_threshold':(self.sr_threshold.text(), QDoubleValidator()),
-            'sr_period':(self.sr_period.text(), QIntValidator())
+            'sr_period':(self.sr_period.text(), QIntValidator()),
+            'timezone_diff':(self.timezone_diff.text(), QIntValidator())
         }
 
         #validate input parameters
@@ -151,6 +152,7 @@ class BotApplication(QWidget):
                 --sr_likelihood={params['sr_likelihood'][0]} \
                 --sr_threshold={params['sr_threshold'][0]} \
                 --sr_period={params['sr_period'][0]} \
+                --timezone_diff={params['timezone_diff'][0]}
             """
             os.system(command)
 
