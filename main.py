@@ -162,11 +162,11 @@ if __name__ == "__main__":
     SYMBOL:str = args.symbol                                            # symbol                                                                                  #
     VOLUME:float = args.volume                                          # volume to trade                                                                         #
     DEVIATION:int = args.deviation                                      # allowable deviation for trade                                                           #
-    UNIT_PIP:Optional[float] = args.unit_pip                            # unit pip value                                                                          #
-    DEFAULT_SL:Optional[float] = args.default_sl                        # stop loss points                                                                        #
+    UNIT_PIP:float = args.unit_pip                                      # unit pip value                                                                          #
+    DEFAULT_SL:float = args.default_sl                                  # stop loss points                                                                        #
     MAX_DIST_SL:float = args.max_sl_dist                                # maximun distance between price and stop loss                                            #
     TRAIL_AMOUNT:float = args.sl_trail                                  # icrement / decrement value for stop loss                                                #
-    DEFAULT_TP:Optional[float] = args.default_tp                        # take profit points                                                                      #
+    DEFAULT_TP:float = args.default_tp                                  # take profit points                                                                      #
     STRATEGY:str = args.strategy                                        # strategy                                                                                #
     USE_ATR:bool = bool(args.use_atr)                                   # option for using atr instead of unit pip value                                          #
     ATR_PERIOD:int = args.atr_period                                    # period of past timestamps to use for computing ATR                                      #
