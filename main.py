@@ -17,7 +17,7 @@ from utils import *
 # bot details
 BOT_DETAILS:Dict[str, str] = {
     'BOT_NAME': "Peinjo",
-    'VERSION': '0.0.1',
+    'VERSION': '0.0.2',
     'BOT_ICON': os.path.join('app_icon', 'icon.ico'),
     'COPYRIGHTS_INFO': '© Tolu, Mekkix and Ches. All rights reserved.',
 }
@@ -104,6 +104,7 @@ if __name__ == "__main__":
     parser.add_argument('--unit_pip', type=float, default=1e-5, metavar='', help='Value of 1 pip for symbol (necessary parameter if ATR is set to 0 (False))')
     parser.add_argument('--use_atr', type=int, choices=[0, 1], default=0, metavar='', help='Use Average True Return (ATR) to compute stop loss, trail, \
         take profit and sr_threshold. Note that when set to True, the unit_pip value will be set to the most recent ATR value')
+    parser.add_argument('--atr_period', type=int, default=5, metavar='', help='period of past timestamps to use for computing ATR value')
     parser.add_argument('--default_sl', type=float, default=4.0, metavar='', help='Default stop loss value (in pip / ATR)')
     parser.add_argument('--max_sl_dist', type=float, default=4.0, metavar='', help='Maximum distance between current price and stop loss (in pip / ATR)')
     parser.add_argument('--sl_trail', type=float, default=0.0, metavar='', help='Stop loss trail value (in pip / ATR)')
@@ -114,7 +115,7 @@ if __name__ == "__main__":
         When set to 1 or close to 1, the bot will only pick the relevant signals only at supports and resistances, and the opposite when set to 0')
     parser.add_argument('--sr_threshold', type=float, default=3.0, metavar='', help='Threshold distance (in pips / ATR) between candle stick that triggered a signal\
         and the corresponding support / resistance line the signal was picked')
-    parser.add_argument('--period', type=int, default=15, metavar='', help='period of past timestamps to use for compute current statistical states')
+    parser.add_argument('--sr_period', type=int, default=60, metavar='', help='period of past timestamps to use for computing the support and resistance levels')
 
     args = parser.parse_args()
 
@@ -144,6 +145,7 @@ if __name__ == "__main__":
     print(f'Trade Deviation:        {args.deviation}')
     print(f'Trade Unit PIP:         {args.unit_pip}')
     print(f'Use ATR:                {bool(args.use_atr)}')
+    print(f'ATR Period:             {args.atr_period}')
     print(f'Trade Default SL:       {args.default_sl}')
     print(f'Trade max SL distance:  {args.max_sl_dist}')
     print(f'Trail SL Value:         {args.sl_trail}')
@@ -152,7 +154,7 @@ if __name__ == "__main__":
     print(f'Timeframe:              {args.timeframe}')
     print(f'SR likelihood           {args.sr_likelihood}')
     print(f'SR contact treshold     {args.sr_threshold}')
-    print(f'Period:                 {args.period}')
+    print(f'SR Period:              {args.sr_period}')
     print(f'Bot Session start time: {datetime.now()}', '\n')
 
     # Parameters
@@ -167,16 +169,17 @@ if __name__ == "__main__":
     DEFAULT_TP:Optional[float] = args.default_tp                        # take profit points                                                                      #
     STRATEGY:str = args.strategy                                        # strategy                                                                                #
     USE_ATR:bool = bool(args.use_atr)                                   # option for using atr instead of unit pip value                                          #
+    ATR_PERIOD:int = args.atr_period                                    # period of past timestamps to use for computing ATR                                      #
     TIMEFRAME:str = args.timeframe                                      # trade timeframe                                                                         #     
     SR_LIKELIHOOD:float = args.sr_likelihood                            # probability score that controls how support resistance indicators are used              #
     SR_THRESHOLD:float = args.sr_threshold                              # minimum distance between signal candle and support / resistance line (in atr or pip)    #
-    PERIOD:int = args.period                                            # period of past timestamps to use for compute current statistical states                 #
+    SR_PERIOD:int = args.sr_period                                      # period of past timestamps to use for compute support and resistance levels              #
     ###############################################################################################################################################################
 
     # utility variables for the event loop
     start_time:Optional[datetime] = None
     timezone_diff:timedelta = timedelta(hours=2)
-    lagtime:timedelta = timedelta(minutes=AVAIALBLE_TIMEFRAMES[TIMEFRAME][1]*PERIOD)
+    lagtime:timedelta = timedelta(minutes=AVAIALBLE_TIMEFRAMES[TIMEFRAME][1] * max(ATR_PERIOD, SR_PERIOD))
     position_ids:List[int] = []
     session_profit:float = 0.0
     atr_value:Optional[float] = None
@@ -236,19 +239,24 @@ if __name__ == "__main__":
             # compute the ATR of past candle sticks prior to current one
             # and set the multiplier to the atr value
             if USE_ATR: 
-                atr_value = compute_latest_atr(input_df)
+                #input dataframe for computing ATR
+                atr_input:pd.DataFrame = input_df.iloc[-ATR_PERIOD:, :]
+                atr_value = compute_latest_atr(atr_input)
                 price_multiplier = atr_value
 
             # Tolu strategy works with the signal being picked up in real-time, rather
             # than awaiting a 3rd candle stick to form
-            if STRATEGY == 'tolu': input_df:pd.DataFrame = rates_df.iloc[:, :]
+            if STRATEGY == 'tolu': input_df = rates_df.iloc[:, :]
             else: start_time = current_time
+
+            # input dataframe to use to compute support and resistance levels
+            sr_input:pd.DataFrame = input_df.iloc[-SR_PERIOD:, :]
 
             # check if condition for buying is satisfied and trade
             # then append the position id to the positions_id
             # list
             if getattr(Strategy, STRATEGY)()['buy'](input_df) and \
-                at_support(input_df, p=SR_LIKELIHOOD, threshold=SR_THRESHOLD * price_multiplier):
+                at_support(sr_input, p=SR_LIKELIHOOD, threshold=SR_THRESHOLD * price_multiplier):
                 order = make_trade(
                     symbol = SYMBOL, 
                     buy = True, 
@@ -271,7 +279,7 @@ if __name__ == "__main__":
             # trade then append the position id to the positions_id
             # list
             elif getattr(Strategy, STRATEGY)()['sell'](input_df) and \
-                at_resistance(input_df, p=SR_LIKELIHOOD, threshold=SR_THRESHOLD * price_multiplier):
+                at_resistance(sr_input, p=SR_LIKELIHOOD, threshold=SR_THRESHOLD * price_multiplier):
                 order = make_trade(
                     symbol = SYMBOL, 
                     buy = False, 

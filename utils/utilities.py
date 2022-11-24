@@ -110,7 +110,7 @@ def make_trade(symbol:str, buy:bool, position_id:Optional[int]=None, **kwargs)->
         "tp": tp,
         "deviation": kwargs['deviation'],
         "magic": MAGIC_NUMBER,
-        "comment": "ches test",
+        "comment": "Peinjo bot",
         "type_time": mt5.ORDER_TIME_GTC,
         "type_filling": mt5.ORDER_FILLING_IOC,
     }

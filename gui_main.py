@@ -105,9 +105,10 @@ class BotApplication(QWidget):
             'max_sl_dist': (self.max_sl_dist.text(), QDoubleValidator()),
             'sl_trail': (self.sl_trail.text(), QDoubleValidator()),
             'default_tp': (self.default_tp.text(), QDoubleValidator()),
+            'atr_period':(self.atr_period.text(), QIntValidator()),
             'sr_likelihood':(self.sr_likelihood.text(), QDoubleValidator()),
             'sr_threshold':(self.sr_threshold.text(), QDoubleValidator()),
-            'period':(self.period.text(), QIntValidator())
+            'sr_period':(self.sr_period.text(), QIntValidator())
         }
 
         #validate input parameters
@@ -136,6 +137,7 @@ class BotApplication(QWidget):
                 {params['password'][0]} \
                 {params['server'][0]} \
                 --use_atr={int(self.use_atr.isChecked())} \
+                --atr_period={params['atr_period'][0]} \
                 --unit_pip={(params['unit_pip'][0])} \
                 --default_sl={params['default_sl'][0]} \
                 --max_sl_dist={params['max_sl_dist'][0]} \
@@ -148,7 +150,7 @@ class BotApplication(QWidget):
                 --timeframe={self.timeframe.currentText()} \
                 --sr_likelihood={params['sr_likelihood'][0]} \
                 --sr_threshold={params['sr_threshold'][0]} \
-                --period={params['period'][0]} \
+                --sr_period={params['sr_period'][0]} \
             """
             os.system(command)
 

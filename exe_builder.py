@@ -5,7 +5,7 @@ from main import BOT_DETAILS
 APP_NAME:str =f"{BOT_DETAILS['BOT_NAME']}"
 
 parser = argparse.ArgumentParser(description=APP_NAME)
-parser.add_argument('version_no', type=int, metavar='version_no', help='Version Number')
+parser.add_argument('version_no', type=float, metavar='version_no', help='Version Number')
 parser.add_argument('app_build', type=str, choices=['gui', 'cli'], metavar='version_no', help='Version Number')
 args = parser.parse_args()
 
