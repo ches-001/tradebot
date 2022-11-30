@@ -1,0 +1,130 @@
+Start                     2022-09-05 04:26:00
+End                       2022-11-29 14:00:00
+Duration                     85 days 09:34:00
+Exposure Time [%]                    79.99881
+Equity Final [$]               1001464.972857
+Equity Peak [$]                1016808.012857
+Return [%]                           0.146497
+Buy & Hold Return [%]                2.813462
+Return (Ann.) [%]                   -0.074777
+Volatility (Ann.) [%]                9.322784
+Sharpe Ratio                              0.0
+Sortino Ratio                             0.0
+Calmar Ratio                              0.0
+Max. Drawdown [%]                    -6.05952
+Avg. Drawdown [%]                   -0.307189
+Max. Drawdown Duration       61 days 09:13:00
+Avg. Drawdown Duration        1 days 17:48:00
+# Trades                                 2987
+Win Rate [%]                        37.328423
+Best Trade [%]                       1.464817
+Worst Trade [%]                      -0.60134
+Avg. Trade [%]                       0.019044
+Max. Trade Duration           2 days 14:22:00
+Avg. Trade Duration           0 days 00:57:00
+Profit Factor                        1.455001
+Expectancy [%]                       0.019159
+SQN                                  0.024795
+_strategy                    ToluStrategyCase
+_equity_curve                             ...
+_trades                         Size  Entr...
+dtype: object
+
+
+Start                     2022-09-05 04:26:00
+End                       2022-11-29 14:00:00
+Duration                     85 days 09:34:00
+Exposure Time [%]                      81.325
+Equity Final [$]               1021758.492857
+Equity Peak [$]                1035103.885714
+Return [%]                           2.175849
+Buy & Hold Return [%]                2.813462
+Return (Ann.) [%]                   10.867658
+Volatility (Ann.) [%]               11.322929
+Sharpe Ratio                         0.959792
+Sortino Ratio                        1.659212
+Calmar Ratio                          1.60218
+Max. Drawdown [%]                   -6.783046
+Avg. Drawdown [%]                   -0.305516
+Max. Drawdown Duration       45 days 06:37:00
+Avg. Drawdown Duration        1 days 07:59:00
+# Trades                                 3401
+Win Rate [%]                        35.901206
+Best Trade [%]                       1.162079
+Worst Trade [%]                     -0.399241
+Avg. Trade [%]                       0.013319
+Max. Trade Duration           2 days 07:08:00
+Avg. Trade Duration           0 days 00:48:00
+Profit Factor                        1.322232
+Expectancy [%]                       0.013406
+SQN                                  0.346146
+_strategy                  EngulfStrategyCase
+_equity_curve                             ...
+_trades                         Size  Entr...
+dtype: object
+
+
+Start                     2022-09-05 04:26:00
+End                       2022-11-29 14:00:00
+Duration                     85 days 09:34:00
+Exposure Time [%]                   83.513095
+Equity Final [$]                999997.305714
+Equity Peak [$]                1045739.208571
+Return [%]                          -0.000269
+Buy & Hold Return [%]                2.813462
+Return (Ann.) [%]                    0.404965
+Volatility (Ann.) [%]               10.986784
+Sharpe Ratio                         0.036859
+Sortino Ratio                        0.050403
+Calmar Ratio                         0.060496
+Max. Drawdown [%]                    -6.69405
+Avg. Drawdown [%]                   -0.245244
+Max. Drawdown Duration       45 days 19:39:00
+Avg. Drawdown Duration        0 days 18:47:00
+# Trades                                 3415
+Win Rate [%]                        40.234261
+Best Trade [%]                       1.311306
+Worst Trade [%]                      -0.60134
+Avg. Trade [%]                       0.018581
+Max. Trade Duration           2 days 08:27:00
+Avg. Trade Duration           0 days 00:52:00
+Profit Factor                        1.483743
+Expectancy [%]                       0.018666
+SQN                                 -0.000044
+_strategy                 RejectionStrateg...
+_equity_curve                             ...
+_trades                         Size  Entr...
+dtype: object
+
+
+Start                     2022-09-05 04:26:00
+End                       2022-11-29 14:00:00
+Duration                     85 days 09:34:00
+Exposure Time [%]                   94.971429
+Equity Final [$]               1134080.474545
+Equity Peak [$]                1138282.794545
+Return [%]                          13.408047
+Buy & Hold Return [%]                2.813462
+Return (Ann.) [%]                     53.0814
+Volatility (Ann.) [%]                19.90406
+Sharpe Ratio                         2.666863
+Sortino Ratio                        7.314979
+Calmar Ratio                        10.409959
+Max. Drawdown [%]                   -5.099098
+Avg. Drawdown [%]                   -0.153045
+Max. Drawdown Duration       34 days 07:20:00
+Avg. Drawdown Duration        0 days 07:02:00
+# Trades                                 5689
+Win Rate [%]                        41.852698
+Best Trade [%]                         1.4034
+Worst Trade [%]                     -0.503752
+Avg. Trade [%]                         0.0232
+Max. Trade Duration           2 days 06:11:00
+Avg. Trade Duration           0 days 00:51:00
+Profit Factor                        1.626872
+Expectancy [%]                        0.02329
+SQN                                  1.831774
+_strategy                 CompositeStrateg...
+_equity_curve                             ...
+_trades                         Size  Entr...
+dtype: object
