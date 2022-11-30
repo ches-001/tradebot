@@ -11,11 +11,12 @@ from main import at_resistance, at_support
 
 #Base Strategy Class
 class BaseStrategyCase(Strategy):
-    unit_pip:Optional[float] = None
+    price_multiplier:Optional[float] = None
     sr_threshold:float = 0.1
-    default_sl_points:float = 1.5
-    default_tp_point:float = 4.5
+    default_sl_points:float = 2
+    default_tp_point:float = 6
     sr_probability:float = 0.0
+    trail_sl:bool = True
     offset:int = 15
 
     def init(self):
@@ -24,15 +25,16 @@ class BaseStrategyCase(Strategy):
     def next(self):
         super().next()
 
-        #current price
-        #current_price:float = self.data.Close[-1]
+        if self.trail_sl:
+            #current price
+            current_price:float = self.data.Close[-1]
 
-        #update stop loss for all trades
-        # for trade in self.trades:
-        #     if trade.is_long:
-        #         trade.sl = max(trade.sl or -np.inf, current_price - (self.unit_pip * self.default_sl_points))
-        #     else:
-        #         trade.sl = min(trade.sl or np.inf, current_price + (self.unit_pip * self.default_sl_points))
+            #update stop loss for all trades
+            for trade in self.trades:
+                if trade.is_long:
+                    trade.sl = max(trade.sl or -np.inf, current_price - (self.price_multiplier * self.default_sl_points))
+                else:
+                    trade.sl = min(trade.sl or np.inf, current_price + (self.price_multiplier * self.default_sl_points))
 
 
 # backtest Tolu Strategy
@@ -51,19 +53,19 @@ class ToluStrategyCase(BaseStrategyCase):
         df['low'] = self.data.Low[-self.offset:]
 
         if len(df) >= self.offset:
-            self.unit_pip = compute_latest_atr(df.iloc[(-self.offset - 1):-1, :])
-            sr_threshold = self.unit_pip * self.sr_threshold
+            self.price_multiplier = compute_latest_atr(df.iloc[(-self.offset - 1):-1, :])
+            sr_threshold = self.price_multiplier * self.sr_threshold
 
             if Tolu.is_bullish_trade(df.iloc[(-self.offset - 1):-1, :]) and \
                 at_support(df.iloc[(-self.offset - 1):-1, :], p=self.sr_probability, threshold=sr_threshold):
-                tp:float = current_price + (self.unit_pip * self.default_tp_point)
-                sl:float = current_price - (self.unit_pip * self.default_sl_points)
+                tp:float = current_price + (self.price_multiplier * self.default_tp_point)
+                sl:float = current_price - (self.price_multiplier * self.default_sl_points)
                 self.buy(sl=sl, tp=tp)
 
             elif Tolu.is_bearish_trade(df.iloc[(-self.offset - 1):-1, :]) and \
                 at_resistance(df.iloc[(-self.offset - 1):-1, :], p=self.sr_probability, threshold=sr_threshold):
-                tp:float = current_price - (self.unit_pip * self.default_tp_point)
-                sl:float = current_price + (self.unit_pip * self.default_sl_points)
+                tp:float = current_price - (self.price_multiplier * self.default_tp_point)
+                sl:float = current_price + (self.price_multiplier * self.default_sl_points)
                 self.sell(sl=sl, tp=tp)
 
 
@@ -83,19 +85,19 @@ class EngulfStrategyCase(BaseStrategyCase):
         df['low'] = self.data.Low[-self.offset:]
 
         if len(df) >= self.offset:
-            self.unit_pip = compute_latest_atr(df.iloc[(-self.offset - 1):-1, :])
-            sr_threshold = self.unit_pip * self.sr_threshold
+            self.price_multiplier = compute_latest_atr(df.iloc[(-self.offset - 1):-1, :])
+            sr_threshold = self.price_multiplier * self.sr_threshold
 
             if Engulf.is_bullish_engulf(df.iloc[(-self.offset - 1):-1, :]) and \
                 at_support(df.iloc[(-self.offset - 1):-1, :], p=self.sr_probability, threshold=sr_threshold):
-                tp:float = current_price + (self.unit_pip * self.default_tp_point)
-                sl:float = current_price - (self.unit_pip * self.default_sl_points)
+                tp:float = current_price + (self.price_multiplier * self.default_tp_point)
+                sl:float = current_price - (self.price_multiplier * self.default_sl_points)
                 self.buy(sl=sl, tp=tp)
 
             elif Engulf.is_bearish_engulf(df.iloc[(-self.offset - 1):-1, :]) and \
                 at_resistance(df.iloc[(-self.offset - 1):-1, :], p=self.sr_probability, threshold=sr_threshold):
-                tp:float = current_price - (self.unit_pip * self.default_tp_point)
-                sl:float = current_price + (self.unit_pip * self.default_sl_points)
+                tp:float = current_price - (self.price_multiplier * self.default_tp_point)
+                sl:float = current_price + (self.price_multiplier * self.default_sl_points)
                 self.sell(sl=sl, tp=tp)
 
 
@@ -115,19 +117,19 @@ class RejectionStrategyCase(BaseStrategyCase):
         df['low'] = self.data.Low[-self.offset:]
 
         if len(df) >= self.offset:
-            self.unit_pip = compute_latest_atr(df.iloc[(-self.offset - 1):-1, :])
-            sr_threshold = self.unit_pip * self.sr_threshold
+            self.price_multiplier = compute_latest_atr(df.iloc[(-self.offset - 1):-1, :])
+            sr_threshold = self.price_multiplier * self.sr_threshold
 
             if Rejection.is_bullish_rejection(df.iloc[(-self.offset - 1):-1, :]) and \
                 at_support(df.iloc[(-self.offset - 1):-1, :], p=self.sr_probability, threshold=sr_threshold):
-                tp:float = current_price + (self.unit_pip * self.default_tp_point)
-                sl:float = current_price - (self.unit_pip * self.default_sl_points)
+                tp:float = current_price + (self.price_multiplier * self.default_tp_point)
+                sl:float = current_price - (self.price_multiplier * self.default_sl_points)
                 self.buy(sl=sl, tp=tp)
 
             elif Engulf.is_bearish_engulf(df.iloc[(-self.offset - 1):-1, :]) and \
                 at_resistance(df.iloc[(-self.offset - 1):-1, :], p=self.sr_probability, threshold=sr_threshold):
-                tp:float = current_price - (self.unit_pip * self.default_tp_point)
-                sl:float = current_price + (self.unit_pip * self.default_sl_points)
+                tp:float = current_price - (self.price_multiplier * self.default_tp_point)
+                sl:float = current_price + (self.price_multiplier * self.default_sl_points)
                 self.sell(sl=sl, tp=tp)
 
 
@@ -150,16 +152,16 @@ class CompositeStrategyCase(BaseStrategyCase):
         df['low'] = self.data.Low[-self.offset:]
 
         if len(df) >= self.offset:
-            self.unit_pip = compute_latest_atr(df.iloc[(-self.offset - 1):-1, :])
-            sr_threshold = self.unit_pip * self.sr_threshold
+            self.price_multiplier = compute_latest_atr(df.iloc[(-self.offset - 1):-1, :])
+            sr_threshold = self.price_multiplier * self.sr_threshold
 
             if (
                 Rejection.is_bullish_rejection(df.iloc[(-self.offset - 1):-1, :]) or
                 Engulf.is_bullish_engulf(df.iloc[(-self.offset - 1):-1, :]) or
                 Tolu.is_bullish_trade(df.iloc[(-self.offset - 1):-1, :])) and \
                 at_support(df.iloc[(-self.offset - 1):-1, :], p=self.sr_probability, threshold=sr_threshold):
-                tp:float = current_price + (self.unit_pip * self.default_tp_point)
-                sl:float = current_price - (self.unit_pip * self.default_sl_points)
+                tp:float = current_price + (self.price_multiplier * self.default_tp_point)
+                sl:float = current_price - (self.price_multiplier * self.default_sl_points)
                 self.buy(sl=sl, tp=tp)
 
             elif (
@@ -167,14 +169,13 @@ class CompositeStrategyCase(BaseStrategyCase):
                 Engulf.is_bearish_engulf(df.iloc[(-self.offset - 1):-1, :]) or
                 Tolu.is_bearish_trade(df.iloc[(-self.offset - 1):-1, :])) and \
                 at_resistance(df.iloc[(-self.offset - 1):-1, :], p=self.sr_probability, threshold=sr_threshold):
-                tp:float = current_price - (self.unit_pip * self.default_tp_point)
-                sl:float = current_price + (self.unit_pip * self.default_sl_points)
+                tp:float = current_price - (self.price_multiplier * self.default_tp_point)
+                sl:float = current_price + (self.price_multiplier * self.default_sl_points)
                 self.sell(sl=sl, tp=tp)
 
 
-# main
 if __name__ == '__main__':
-    init_env:bool = mt5.initialize(login=51024038, password='uyQ8b3yr', server='ICMarketsSC-Demo')
+    init_env:bool = mt5.initialize(login=51040307, password='ERCLCcAE', server='ICMarketsSC-Demo')
 
     if not init_env:
         print('failed to initialise metatrader5')
@@ -182,10 +183,10 @@ if __name__ == '__main__':
         sys.exit()
 
     #start time
-    start_time:datetime = datetime(2022, 11, 14)
+    start_time:datetime = datetime(2022, 11, 29, 14)
 
     # fetch and compile data
-    rates:np.ndarray = mt5.copy_rates_from('US30', mt5.TIMEFRAME_M1, start_time, 180_000)
+    rates:np.ndarray = mt5.copy_rates_from('XAUUSD', mt5.TIMEFRAME_M1, start_time, 84000)
     rates_df:pd.DataFrame = pd.DataFrame(rates)
     rates_df['time'] = [datetime.fromtimestamp(uts) for uts in rates_df['time']]
     rates_df.index = rates_df['time']
@@ -193,10 +194,10 @@ if __name__ == '__main__':
     rates_df = rates_df.rename(columns={'close':'Close', 'open':'Open', 'low':'Low', 'high':'High'})
 
     # backtest cases
-    tolu_backtester:Backtest = Backtest(rates_df, ToluStrategyCase, cash=100_000, commission=0)
-    engulf_backtester:Backtest = Backtest(rates_df, EngulfStrategyCase, cash=100_000, commission=0)
-    rejection_backtester:Backtest = Backtest(rates_df, RejectionStrategyCase, cash=100_000, commission=0)
-    composite_backtester:Backtest = Backtest(rates_df, CompositeStrategyCase, cash=100_000, commission=0)
+    tolu_backtester:Backtest = Backtest(rates_df, ToluStrategyCase, cash=1_000_000, commission=0)
+    engulf_backtester:Backtest = Backtest(rates_df, EngulfStrategyCase, cash=1_000_000, commission=0)
+    rejection_backtester:Backtest = Backtest(rates_df, RejectionStrategyCase, cash=1_000_000, commission=0)
+    composite_backtester:Backtest = Backtest(rates_df, CompositeStrategyCase, cash=1_000_000, commission=0)
 
 
     print(tolu_backtester.run(), '\n\n')
