@@ -117,8 +117,8 @@ if __name__ == "__main__":
         and the corresponding support / resistance line the signal was picked')
     parser.add_argument('--sr_period', type=int, default=60, metavar='', help='period of past timestamps to use for computing the support and resistance levels')
     parser.add_argument('--timezone_diff', type=int, default=2, metavar='', help='Broker server timezone difference (hours)')
-    parser.add_argument('--target_profit', type=float, default=0.0, metavar='', help='% target profit for the session. The session will terminate when it is reached')
-    parser.add_argument('--max_loss', type=float, default=0.0, metavar='', help='% maximum loss for the session. The session will terminate when it is reached')
+    parser.add_argument('--target_profit', type=float, default=0.0, metavar='', help='Percentage target profit for the session. The session will terminate when it is reached')
+    parser.add_argument('--max_loss', type=float, default=0.0, metavar='', help='Percentage maximum loss for the session. The session will terminate when it is reached')
 
     args = parser.parse_args()
 
