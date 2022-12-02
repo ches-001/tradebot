@@ -531,7 +531,7 @@
     </rect>
    </property>
   </widget>
-  <widget class="QLabel" name="label">
+  <widget class="QLabel" name="timezone_diff_label">
    <property name="geometry">
     <rect>
      <x>180</x>
@@ -542,6 +542,52 @@
    </property>
    <property name="text">
     <string>Timezone difference</string>
+   </property>
+  </widget>
+  <widget class="QLineEdit" name="target_profit">
+   <property name="geometry">
+    <rect>
+     <x>340</x>
+     <y>349</y>
+     <width>121</width>
+     <height>31</height>
+    </rect>
+   </property>
+  </widget>
+  <widget class="QLineEdit" name="max_loss">
+   <property name="geometry">
+    <rect>
+     <x>502</x>
+     <y>350</y>
+     <width>121</width>
+     <height>31</height>
+    </rect>
+   </property>
+  </widget>
+  <widget class="QLabel" name="target_profit_label">
+   <property name="geometry">
+    <rect>
+     <x>340</x>
+     <y>330</y>
+     <width>111</width>
+     <height>16</height>
+    </rect>
+   </property>
+   <property name="text">
+    <string>Target Profit (%)</string>
+   </property>
+  </widget>
+  <widget class="QLabel" name="max_loss_label">
+   <property name="geometry">
+    <rect>
+     <x>500</x>
+     <y>330</y>
+     <width>121</width>
+     <height>16</height>
+    </rect>
+   </property>
+   <property name="text">
+    <string>Maximum Loss (%)</string>
    </property>
   </widget>
  </widget>

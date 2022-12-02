@@ -109,7 +109,9 @@ class BotApplication(QWidget):
             'sr_likelihood':(self.sr_likelihood.text(), QDoubleValidator()),
             'sr_threshold':(self.sr_threshold.text(), QDoubleValidator()),
             'sr_period':(self.sr_period.text(), QIntValidator()),
-            'timezone_diff':(self.timezone_diff.text(), QIntValidator())
+            'timezone_diff':(self.timezone_diff.text(), QIntValidator()),
+            'target_profit':(self.target_profit.text(), QDoubleValidator()),
+            'max_loss':(self.max_loss.text(), QDoubleValidator()),
         }
 
         #validate input parameters
@@ -152,7 +154,9 @@ class BotApplication(QWidget):
                 --sr_likelihood={params['sr_likelihood'][0]} \
                 --sr_threshold={params['sr_threshold'][0]} \
                 --sr_period={params['sr_period'][0]} \
-                --timezone_diff={params['timezone_diff'][0]}
+                --timezone_diff={params['timezone_diff'][0]} \
+                --target_profit={params['target_profit'][0]} \
+                --max_loss={params['max_loss'][0]}
             """
             os.system(command)
 

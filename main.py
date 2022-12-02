@@ -17,7 +17,7 @@ from utils import *
 # bot details
 BOT_DETAILS:Dict[str, str] = {
     'BOT_NAME': "Peinjo",
-    'VERSION': '0.0.2',
+    'VERSION': '0.0.3',
     'BOT_ICON': os.path.join('app_icon', 'icon.ico'),
     'COPYRIGHTS_INFO': '© Tolu, Mekkix and Ches. All rights reserved.',
 }
@@ -117,6 +117,8 @@ if __name__ == "__main__":
         and the corresponding support / resistance line the signal was picked')
     parser.add_argument('--sr_period', type=int, default=60, metavar='', help='period of past timestamps to use for computing the support and resistance levels')
     parser.add_argument('--timezone_diff', type=int, default=2, metavar='', help='Broker server timezone difference (hours)')
+    parser.add_argument('--target_profit', type=float, default=0.0, metavar='', help='% target profit for the session. The session will terminate when it is reached')
+    parser.add_argument('--max_loss', type=float, default=0.0, metavar='', help='% maximum loss for the session. The session will terminate when it is reached')
 
     args = parser.parse_args()
 
@@ -140,7 +142,7 @@ if __name__ == "__main__":
 
     # initial console comments
     print(APP_NAME, '\n')
-    print(f"Version:                {BOT_DETAILS['VERSION']}")
+    print(f"Version:                {BOT_DETAILS['VERSION']} \n")
     print(f'Trade Symbol:           {args.symbol}')
     print(f'Trade Volume:           {args.volume}')
     print(f'Trade Deviation:        {args.deviation}')
@@ -157,6 +159,8 @@ if __name__ == "__main__":
     print(f'SR contact treshold     {args.sr_threshold}')
     print(f'SR Period:              {args.sr_period}')
     print(f'Broker Timezone diff:   {args.timezone_diff} hours')
+    print(f'% Target Profit:        {args.target_profit}%')
+    print(f'% Maximmun Loss:        {args.max_loss}%')
     print(f'Bot Session start time: {datetime.now()}', '\n')
 
     # Parameters
@@ -177,6 +181,8 @@ if __name__ == "__main__":
     SR_THRESHOLD:float = args.sr_threshold                              # minimum distance between signal candle and support / resistance line (in atr or pip)    #
     SR_PERIOD:int = args.sr_period                                      # period of past timestamps to use for compute support and resistance levels              #
     TIMEZONE_DIFF:int = args.timezone_diff                              # broker / server timezone difference (hours)                                             #
+    TARGET_PROFIT:float = args.target_profit                            # percentage target profit for a given session                                            #
+    MAX_LOSS:float = args.max_loss                                      # percentage maximum loss for a given session                                             #
     ###############################################################################################################################################################
 
     # utility variables for the event loop
@@ -184,10 +190,13 @@ if __name__ == "__main__":
     timezone_diff:timedelta = timedelta(hours=TIMEZONE_DIFF)
     lagtime:timedelta = timedelta(minutes=AVAIALBLE_TIMEFRAMES[TIMEFRAME][1] * max(ATR_PERIOD, SR_PERIOD))
     position_ids:List[int] = []
-    session_profit:float = 0.0
+    session_profit:float = 0
     atr_value:Optional[float] = None
     # set price_multiplier to atr if USE_ATR == True, else set it to UNIT PIP
     price_multiplier:Optional[float] = atr_value if (USE_ATR) else UNIT_PIP
+    #account info
+    account_info:mt5.AccountInfo = mt5.account_info()
+    starting_equity:float = account_info.balance
 
     while True:
         # trails stop loss for each ticket
@@ -206,6 +215,18 @@ if __name__ == "__main__":
                     print(f'Deal Profit value:---------------------  {profit}')
                     print(f'Total session Profit value:------------  {session_profit}\n')
                     position_ids.remove(trailed_order)
+
+        elif len(position_ids) == 0 and session_profit != 0:
+            percentage_profit:float = get_percentage_profit(starting_equity, session_profit)
+            
+            if TARGET_PROFIT > 0 and percentage_profit >= TARGET_PROFIT:
+                print(f'\nTarget profit has been reached or exceeded at {round(percentage_profit, 4)}%, \
+                    this session will be terminated')
+                break
+            elif MAX_LOSS > 0 and percentage_profit <= -MAX_LOSS:
+                print(f'\nMaximum session loss has been reached or exceeded at {round(percentage_profit, 4)}%, \
+                    this session will be terminated')
+                break
 
         # delay (secs)
         time.sleep(0.06)

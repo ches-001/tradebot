@@ -26,9 +26,7 @@ class Tolu:
         condition_2:bool = df['high'].iloc[-1] > df['high'].values[-2]
         condition_3:bool = df['low'].iloc[-1] < df['low'].iloc[-2]
 
-        if condition_1 and condition_2 and condition_3: return True
-
-        return False
+        return condition_1 and condition_2 and condition_3
 
     @staticmethod
     def is_bearish_trade(df:pd.DataFrame)->bool:
@@ -51,9 +49,7 @@ class Tolu:
         condition_2:bool = df['high'].iloc[-1] > df['high'].iloc[-2]
         condition_3:bool = df['low'].iloc[-1] < df['low'].iloc[-2]
 
-        if condition_1 and condition_2 and condition_3: return True
-
-        return False
+        return condition_1 and condition_2 and condition_3
 
 
 # Engulf Strategy
@@ -79,9 +75,7 @@ class Engulf:
         condition_3:bool = df['close'].iloc[-1] > df['open'].iloc[-1]
         condition_4:bool = df['close'].iloc[-2] < df['open'].iloc[-2]
 
-        if condition_1 and condition_2 and condition_3 and condition_4: return True
-
-        return False
+        return condition_1 and condition_2 and condition_3 and condition_4
 
     @staticmethod
     def is_bearish_engulf(df:pd.DataFrame)->bool:
@@ -104,9 +98,7 @@ class Engulf:
         condition_3:bool = df['close'].iloc[-1] < df['open'].iloc[-1]
         condition_4:bool = df['close'].iloc[-2] > df['open'].iloc[-2]
 
-        if condition_1 and condition_2 and condition_3 and condition_4: return True
-
-        return False
+        return condition_1 and condition_2 and condition_3 and condition_4
 
 
 #Rjection Strategy
@@ -134,12 +126,10 @@ class Rejection:
 
         if body_size != 0:
             t2b_ratio:float = tail_size / body_size
-            if t2b_ratio >= 2 and wick_size <= 0.25*tail_size: return True
-            else:return False
+            return t2b_ratio >= 2 and wick_size <= 0.25*tail_size
 
         else:
-            if wick_size <= 0.25*tail_size: return True
-            else:return False
+            return wick_size <= 0.25*tail_size
 
     @staticmethod
     def is_bearish_rejection(df:pd.DataFrame, iloc_idx:int=-1)->bool:
@@ -163,12 +153,10 @@ class Rejection:
 
         if body_size != 0:
             w2b_ratio:float = wick_size / body_size
-            if w2b_ratio >= 1.5 and tail_size <= 0.25*wick_size: return True
-            else:return False
+            return w2b_ratio >= 1.5 and tail_size <= 0.25*wick_size
 
         else:
-            if tail_size <= 0.25*wick_size: return True
-            else:return False
+            return tail_size <= 0.25*wick_size
 
 
 #support resistance strategy
@@ -343,8 +331,7 @@ class SupportResistance:
         c2:bool = abs(l - closest_support) <= threshold
         c3:bool = abs(min(o, c) - closest_support) <= threshold
         
-        if c1 and (c2 or c3):return True
-        return False
+        return c1 and (c2 or c3)
 
 
     @staticmethod
@@ -380,5 +367,4 @@ class SupportResistance:
         c2:bool = abs(h - closest_resistance) <= threshold
         c3:bool = abs(max(o, c) - closest_resistance) <= threshold
 
-        if c1 and (c2 or c3):return True
-        return False
+        return c1 and (c2 or c3)

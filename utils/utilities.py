@@ -231,13 +231,15 @@ def log_open_order(order:mt5.OrderSendResult, buy:bool)->None:
 
 def compute_latest_atr(df:pd.DataFrame)->float:
     r"""
-    This function computes the latest ATR value for a stock price dataframe
+    This function computes the latest ATR (Average True Range) value for a stock price dataframe
 
     parameters
     -------------
     df: (pd.DataFrame) - stock price data
 
-    buy: (flaot) - ATR value
+    returns
+    -------------
+    returns ATR value as float
     """
     HL_range:pd.Series = df['high'] - df['low']
     HCp_range:pd.Series = np.abs(df['high'] - df['close'].shift())
@@ -246,3 +248,20 @@ def compute_latest_atr(df:pd.DataFrame)->float:
     TR = pd.concat((HL_range, HCp_range, LCp_range), axis=1).max(axis=1)
     ATR = TR.mean()
     return ATR
+
+
+def get_percentage_profit(starting_equity:float, session_profit:float)->float:
+    r"""
+    This function computes the percentage profit made in a given session run
+
+    parameters
+    -------------
+    starting_equity: (float) - starting equity / balance for session
+
+    session_profit: (float) - total profit made so far during current session
+
+    returns
+    -------------
+    returns a float value of percentage profit
+    """
+    return (session_profit / starting_equity) * 100
