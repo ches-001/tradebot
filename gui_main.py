@@ -37,9 +37,11 @@ class BotApplication(QWidget):
             '''
         )
 
+        # populate comboboxes
         self._strategies = ['tolu', 'engulf', 'rejection', 'composite']
         self.populateCombobox('strategy', self._strategies)
         self.populateCombobox('timeframe', AVAIALBLE_TIMEFRAMES.keys())
+        self.populateCombobox('filling_mode', list(BOT_DETAILS['FILLING_MODES'].keys()))
         self.setConfig() #set saved config params
         self.start_button.clicked.connect(self.startEvent)
         self.help_button.clicked.connect(self.showHelpMenu)
@@ -112,6 +114,7 @@ class BotApplication(QWidget):
             'timezone_diff':(self.timezone_diff.text(), QIntValidator()),
             'target_profit':(self.target_profit.text(), QDoubleValidator()),
             'max_loss':(self.max_loss.text(), QDoubleValidator()),
+            'session_duration':(self.session_duration.text(), QIntValidator()),
         }
 
         #validate input parameters
@@ -130,6 +133,7 @@ class BotApplication(QWidget):
             config['save_config'] = self.save_config.isChecked()
             config['strategy'] = self.strategy.currentText()
             config['timeframe'] = self.timeframe.currentText()
+            config['filling_mode'] = self.filling_model.currentText()
             self.saveConfig(config)
 
         #send params to main program to run on terminal
@@ -156,7 +160,9 @@ class BotApplication(QWidget):
                 --sr_period={params['sr_period'][0]} \
                 --timezone_diff={params['timezone_diff'][0]} \
                 --target_profit={params['target_profit'][0]} \
-                --max_loss={params['max_loss'][0]}
+                --max_loss={params['max_loss'][0]} \
+                --filling_mode={self.filling_mode.currentText()}  \
+                --session_duration={params['session_duration'][0]}
             """
             os.system(command)
 

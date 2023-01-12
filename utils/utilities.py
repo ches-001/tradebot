@@ -72,6 +72,8 @@ def make_trade(symbol:str, buy:bool, position_id:Optional[int]=None, **kwargs)->
 
         deviation: (int) maximum acceptable deviation from the requested price
         specified in "points" of the stock being traded
+
+        filling_mode: (int) specifies the filling mode used by the broker
         
     returns
     -------------
@@ -112,7 +114,7 @@ def make_trade(symbol:str, buy:bool, position_id:Optional[int]=None, **kwargs)->
         "magic": MAGIC_NUMBER,
         "comment": "Peinjo bot",
         "type_time": mt5.ORDER_TIME_GTC,
-        "type_filling": mt5.ORDER_FILLING_IOC,
+        "type_filling": kwargs['filling_mode'],
     }
 
     if position_id:request['position']=position_id

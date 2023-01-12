@@ -13,10 +13,10 @@ from main import at_resistance, at_support
 class BaseStrategyCase(Strategy):
     price_multiplier:Optional[float] = None
     sr_threshold:float = 0.1
-    default_sl_points:float = 2
-    default_tp_point:float = 6
+    default_sl_points:float = 1
+    default_tp_point:float = 3
     sr_probability:float = 0.0
-    trail_sl:bool = True
+    trail_sl:bool = False
     offset:int = 15
 
     def init(self):
@@ -183,24 +183,27 @@ if __name__ == '__main__':
         sys.exit()
 
     #start time
-    start_time:datetime = datetime(2022, 11, 29, 14)
+    start_time:datetime = datetime(2022, 12, 25, 23)
 
     # fetch and compile data
-    rates:np.ndarray = mt5.copy_rates_from('XAUUSD', mt5.TIMEFRAME_M1, start_time, 84000)
-    rates_df:pd.DataFrame = pd.DataFrame(rates)
-    rates_df['time'] = [datetime.fromtimestamp(uts) for uts in rates_df['time']]
-    rates_df.index = rates_df['time']
-    rates_df = rates_df[['open', 'low', 'high', 'close']]
-    rates_df = rates_df.rename(columns={'close':'Close', 'open':'Open', 'low':'Low', 'high':'High'})
+    symbols = ['AUDUSD', 'GBPUSD', 'EURUSD', 'USDJPY']
+    for symbol in symbols:
+        print(f'Symbol: {symbol}')
+        rates:np.ndarray = mt5.copy_rates_from(symbol, mt5.TIMEFRAME_M5, start_time, 50_000)
+        rates_df:pd.DataFrame = pd.DataFrame(rates)
+        rates_df['time'] = [datetime.fromtimestamp(uts) for uts in rates_df['time']]
+        rates_df.index = rates_df['time']
+        rates_df = rates_df[['open', 'low', 'high', 'close']]
+        rates_df = rates_df.rename(columns={'close':'Close', 'open':'Open', 'low':'Low', 'high':'High'})
 
-    # backtest cases
-    tolu_backtester:Backtest = Backtest(rates_df, ToluStrategyCase, cash=1_000_000, commission=0)
-    engulf_backtester:Backtest = Backtest(rates_df, EngulfStrategyCase, cash=1_000_000, commission=0)
-    rejection_backtester:Backtest = Backtest(rates_df, RejectionStrategyCase, cash=1_000_000, commission=0)
-    composite_backtester:Backtest = Backtest(rates_df, CompositeStrategyCase, cash=1_000_000, commission=0)
+        # backtest cases
+        tolu_backtester:Backtest = Backtest(rates_df, ToluStrategyCase, cash=1_000_000, commission=0)
+        #engulf_backtester:Backtest = Backtest(rates_df, EngulfStrategyCase, cash=1_000_000, commission=0)
+        #rejection_backtester:Backtest = Backtest(rates_df, RejectionStrategyCase, cash=1_000_000, commission=0)
+        #composite_backtester:Backtest = Backtest(rates_df, CompositeStrategyCase, cash=1_000_000, commission=0)
 
 
-    print(tolu_backtester.run(), '\n\n')
-    print(engulf_backtester.run(), '\n\n')
-    print(rejection_backtester.run(), '\n\n')
-    print(composite_backtester.run(), '\n\n')
+        print(tolu_backtester.run(), '\n\n')
+        #print(engulf_backtester.run(), '\n\n')
+        #print(rejection_backtester.run(), '\n\n')
+        #print(composite_backtester.run(), '\n\n')

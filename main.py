@@ -14,12 +14,16 @@ from typing import Union, Optional, List, Dict
 from bot_strategies import Tolu, Engulf, Rejection, SupportResistance
 from utils import *
 
-# bot details
+# bot details / settings
 BOT_DETAILS:Dict[str, str] = {
     'BOT_NAME': "Peinjo",
-    'VERSION': '0.0.3',
+    'VERSION': '0.0.4',
     'BOT_ICON': os.path.join('app_icon', 'icon.ico'),
     'COPYRIGHTS_INFO': '© Tolu, Mekkix and Ches. All rights reserved.',
+    'FILLING_MODES': {
+        'IOC': mt5.ORDER_FILLING_IOC, 
+        'FOK': mt5.ORDER_FILLING_FOK, 
+        'RETURN': mt5.ORDER_FILLING_RETURN}
 }
 
 # chain all buy strategies into one to form a composite
@@ -119,12 +123,14 @@ if __name__ == "__main__":
     parser.add_argument('--timezone_diff', type=int, default=2, metavar='', help='Broker server timezone difference (hours)')
     parser.add_argument('--target_profit', type=float, default=0.0, metavar='', help='Percentage target profit for the session. The session will terminate when it is reached')
     parser.add_argument('--max_loss', type=float, default=0.0, metavar='', help='Percentage maximum loss for the session. The session will terminate when it is reached')
-
+    parser.add_argument('--filling_mode', type=str, default='IOC', choices=list(BOT_DETAILS['FILLING_MODES'].keys()), metavar='', help='Appropriate order filling mode for your broker')
+    parser.add_argument('--session_duration', type=int, default=0, metavar='', help='Duration to run the bot (in minutes)')
     args = parser.parse_args()
 
 
     # initialise the MetaTrader 5 app
     init_env:bool = mt5.initialize(login=args.login, password=args.password, server=args.server)
+
     if not init_env:
         print('failed to initialise metatrader5')
         mt5.shutdown()
@@ -139,6 +145,12 @@ if __name__ == "__main__":
     if not hasattr(Strategy, args.strategy):
         print(f'{args.strategy} is an invalid strategy, go to the help menu for available options')
         sys.exit()
+
+    # start session time variable
+    session_start_time:datetime = datetime.now()
+    session_end_time:datetime = session_start_time + timedelta(minutes=args.session_duration+1)
+    session_start_time:str = session_start_time.strftime("%Y-%m-%d %H:%M")
+    session_end_time:str = session_end_time.strftime("%Y-%m-%d %H:%M")
 
     # initial console comments
     print(APP_NAME, '\n')
@@ -161,7 +173,9 @@ if __name__ == "__main__":
     print(f'Broker Timezone diff:   {args.timezone_diff} hours')
     print(f'% Target Profit:        {args.target_profit}%')
     print(f'% Maximmun Loss:        {args.max_loss}%')
-    print(f'Bot Session start time: {datetime.now()}', '\n')
+    print(f'Filling Mode:           {args.filling_mode}')
+    print(f'Session Duration:       {args.session_duration} minutes')
+    print(f'Bot Session start time: {session_start_time}', '\n')
 
     # Parameters
     ###############################################################################################################################################################
@@ -183,10 +197,12 @@ if __name__ == "__main__":
     TIMEZONE_DIFF:int = args.timezone_diff                              # broker / server timezone difference (hours)                                             #
     TARGET_PROFIT:float = args.target_profit                            # percentage target profit for a given session                                            #
     MAX_LOSS:float = args.max_loss                                      # percentage maximum loss for a given session                                             #
+    FILLING_MODE:str = args.filling_mode                                # appropriate order filling mode for your broker                                          #
+    SESSIION_DURATION:int = args.session_duration                       # duration to run the bot (minutes)                                                       #
     ###############################################################################################################################################################
 
     # utility variables for the event loop
-    start_time:Optional[datetime] = None
+    trade_start_time:Optional[datetime] = None
     timezone_diff:timedelta = timedelta(hours=TIMEZONE_DIFF)
     lagtime:timedelta = timedelta(minutes=AVAIALBLE_TIMEFRAMES[TIMEFRAME][1] * max(ATR_PERIOD, SR_PERIOD))
     position_ids:List[int] = []
@@ -199,6 +215,14 @@ if __name__ == "__main__":
     starting_equity:float = account_info.balance
 
     while True:
+        #check if stipulated session time has elapsed
+        session_current_time:str = datetime.now().strftime("%Y-%m-%d %H:%M")
+
+        if session_start_time != session_end_time and session_current_time == session_end_time:
+            print(session_start_time, session_end_time, session_current_time)
+            print(f'session has terminated after {SESSIION_DURATION} minutes, at {session_end_time}')
+            break
+
         # trails stop loss for each ticket
         if len(position_ids) > 0:
             for id in position_ids:
@@ -243,11 +267,11 @@ if __name__ == "__main__":
             rates_df:pd.DataFrame = pd.DataFrame(rates)
 
             # if no time is set (bot just started), set to latest time in rates_df
-            if not start_time:
-                start_time = format_uts(rates_df['time'].values[-1], dt_obj=True)
+            if not trade_start_time:
+                trade_start_time = format_uts(rates_df['time'].values[-1], dt_obj=True)
 
             # get current time from rates_df dataframe
-            current_time:datetime = format_uts(rates_df['time'].values[-1], dt_obj=True)
+            current_trade_time:datetime = format_uts(rates_df['time'].values[-1], dt_obj=True)
         
         except IndexError:
             print('Market is currently closed, or timezone difference is incorrect.')
@@ -255,7 +279,7 @@ if __name__ == "__main__":
             break
 
         # check if new session has started by the current time, and initialise trade
-        if start_time != current_time:
+        if trade_start_time != current_trade_time:
             
             #input dateframe for strategies
             input_df:pd.DataFrame = rates_df.iloc[:-1, :]
@@ -271,7 +295,7 @@ if __name__ == "__main__":
             # Tolu strategy works with the signal being picked up in real-time, rather
             # than awaiting a 3rd candle stick to form
             if STRATEGY == 'tolu': input_df = rates_df.iloc[:, :]
-            else: start_time = current_time
+            else: trade_start_time = current_trade_time
 
             # input dataframe to use to compute support and resistance levels
             sr_input:pd.DataFrame = input_df.iloc[-SR_PERIOD:, :]
@@ -288,7 +312,8 @@ if __name__ == "__main__":
                     volume = VOLUME, 
                     sl_points = DEFAULT_SL * price_multiplier,
                     tp_points = DEFAULT_TP * price_multiplier,
-                    deviation = DEVIATION)
+                    deviation = DEVIATION, 
+                    filling_mode = BOT_DETAILS['FILLING_MODES'][FILLING_MODE])
                 
                 print(order.comment)
                 if USE_ATR: print(f'current ATR: {round(atr_value, 4)}')
@@ -296,7 +321,7 @@ if __name__ == "__main__":
                     log_open_order(order, buy=True)
                     position_ids.append(order.order)
 
-                if STRATEGY == 'tolu': start_time = current_time
+                if STRATEGY == 'tolu': trade_start_time = current_trade_time
 
 
             # likewise, check if condition for selling is satisfied and
@@ -311,7 +336,8 @@ if __name__ == "__main__":
                     volume = VOLUME, 
                     sl_points = DEFAULT_SL * price_multiplier,
                     tp_points = DEFAULT_TP * price_multiplier,
-                    deviation = DEVIATION)
+                    deviation = DEVIATION,
+                    filling_mode = BOT_DETAILS['FILLING_MODES'][FILLING_MODE])
                 
                 print(order.comment)
                 if USE_ATR: print(f'current ATR: {round(atr_value, 4)}')
@@ -319,4 +345,4 @@ if __name__ == "__main__":
                     log_open_order(order, buy=False)
                     position_ids.append(order.order)
 
-                if STRATEGY == 'tolu': start_time = current_time
+                if STRATEGY == 'tolu': trade_start_time = current_trade_time

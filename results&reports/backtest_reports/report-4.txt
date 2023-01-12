@@ -1,0 +1,134 @@
+Symbol: AUDUSD
+Start                     2022-04-26 06:35:00
+End                       2022-12-24 00:55:00
+Duration                    241 days 18:20:00
+Exposure Time [%]                      51.016
+Equity Final [$]               1084877.082426
+Equity Peak [$]                1138466.981039
+Return [%]                           8.487708
+Buy & Hold Return [%]               -6.709003
+Return (Ann.) [%]                    11.28625
+Volatility (Ann.) [%]                8.511732
+Sharpe Ratio                         1.325964
+Sortino Ratio                        2.240882
+Calmar Ratio                         2.368528
+Max. Drawdown [%]                    -4.76509
+Avg. Drawdown [%]                   -0.286424
+Max. Drawdown Duration       57 days 07:15:00
+Avg. Drawdown Duration        1 days 06:42:00
+# Trades                                 3495
+Win Rate [%]                        32.618026
+Best Trade [%]                       0.934132
+Worst Trade [%]                     -0.324322
+Avg. Trade [%]                       0.011509
+Max. Trade Duration           2 days 12:20:00
+Avg. Trade Duration           0 days 01:26:00
+Profit Factor                        1.235973
+Expectancy [%]                       0.011608
+SQN                                  1.046774
+_strategy                    ToluStrategyCase
+_equity_curve                             ...
+_trades                            Size  E...
+dtype: object
+
+
+Symbol: GBPUSD
+Start                     2022-04-26 06:05:00
+End                       2022-12-24 00:55:00
+Duration                    241 days 18:50:00
+Exposure Time [%]                       53.26
+Equity Final [$]               1066915.739019
+Equity Peak [$]                1085598.191034
+Return [%]                           6.691574
+Buy & Hold Return [%]                -5.49317
+Return (Ann.) [%]                     8.10092
+Volatility (Ann.) [%]                9.526147
+Sharpe Ratio                         0.850388
+Sortino Ratio                        1.281611
+Calmar Ratio                         0.873768
+Max. Drawdown [%]                   -9.271246
+Avg. Drawdown [%]                   -0.235902
+Max. Drawdown Duration      136 days 06:15:00
+Avg. Drawdown Duration        1 days 16:23:00
+# Trades                                 3643
+Win Rate [%]                        32.226187
+Best Trade [%]                       1.250111
+Worst Trade [%]                     -0.700116
+Avg. Trade [%]                       0.009079
+Max. Trade Duration           2 days 15:30:00
+Avg. Trade Duration           0 days 01:19:00
+Profit Factor                        1.208563
+Expectancy [%]                       0.009166
+SQN                                  0.891128
+_strategy                    ToluStrategyCase
+_equity_curve                             ...
+_trades                           Size  En...
+dtype: object
+
+
+Symbol: EURUSD
+Start                     2022-04-26 07:20:00
+End                       2022-12-24 00:55:00
+Duration                    241 days 17:35:00
+Exposure Time [%]                      53.154
+Equity Final [$]               1040630.737352
+Equity Peak [$]                1076831.710356
+Return [%]                           4.063074
+Buy & Hold Return [%]               -1.115893
+Return (Ann.) [%]                    4.588785
+Volatility (Ann.) [%]                6.717515
+Sharpe Ratio                         0.683107
+Sortino Ratio                        1.100856
+Calmar Ratio                         0.825722
+Max. Drawdown [%]                   -5.557297
+Avg. Drawdown [%]                   -0.248807
+Max. Drawdown Duration      105 days 11:00:00
+Avg. Drawdown Duration        2 days 00:22:00
+# Trades                                 3397
+Win Rate [%]                        32.469826
+Best Trade [%]                       0.686495
+Worst Trade [%]                     -0.323521
+Avg. Trade [%]                       0.008867
+Max. Trade Duration           2 days 16:00:00
+Avg. Trade Duration           0 days 01:29:00
+Profit Factor                        1.245474
+Expectancy [%]                       0.008925
+SQN                                  0.681304
+_strategy                    ToluStrategyCase
+_equity_curve                             ...
+_trades                           Size  En...
+dtype: object
+
+
+Symbol: USDJPY
+Start                     2022-04-26 05:20:00
+End                       2022-12-24 00:55:00
+Duration                    241 days 19:35:00
+Exposure Time [%]                        52.7
+Equity Final [$]               1104203.338714
+Equity Peak [$]                  1106360.2725
+Return [%]                          10.420334
+Buy & Hold Return [%]                4.071047
+Return (Ann.) [%]                   13.407278
+Volatility (Ann.) [%]                6.664624
+Sharpe Ratio                         2.011708
+Sortino Ratio                        4.283755
+Calmar Ratio                         3.774951
+Max. Drawdown [%]                   -3.551643
+Avg. Drawdown [%]                   -0.209473
+Max. Drawdown Duration      108 days 04:10:00
+Avg. Drawdown Duration        1 days 08:58:00
+# Trades                                 3271
+Win Rate [%]                        32.100275
+Best Trade [%]                        1.39416
+Worst Trade [%]                     -0.549148
+Avg. Trade [%]                       0.007885
+Max. Trade Duration           2 days 10:45:00
+Avg. Trade Duration           0 days 01:25:00
+Profit Factor                        1.218372
+Expectancy [%]                       0.007947
+SQN                                  1.704252
+_strategy                    ToluStrategyCase
+_equity_curve                             ...
+_trades                         Size  Entr...
+dtype: object
