@@ -133,7 +133,7 @@ class BotApplication(QWidget):
             config['save_config'] = self.save_config.isChecked()
             config['strategy'] = self.strategy.currentText()
             config['timeframe'] = self.timeframe.currentText()
-            config['filling_mode'] = self.filling_model.currentText()
+            config['filling_mode'] = self.filling_mode.currentText()
             self.saveConfig(config)
 
         #send params to main program to run on terminal

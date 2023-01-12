@@ -610,7 +610,7 @@
     </rect>
    </property>
    <property name="text">
-    <string>Filling Model</string>
+    <string>Filling Mode</string>
    </property>
   </widget>
   <widget class="QLineEdit" name="session_duration">
