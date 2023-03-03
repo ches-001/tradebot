@@ -368,3 +368,65 @@ class SupportResistance:
         c3:bool = abs(max(o, c) - closest_resistance) <= threshold
 
         return c1 and (c2 or c3)
+    
+
+class TrendLines:
+
+    @staticmethod
+    def append_ema(df: pd.DataFrame, period: int=10)->pd.DataFrame:
+        r"""
+        Computes EMA trendline from closing prices and adds to dataframe as new column
+
+        parameters
+        -------------
+        df: (pandas.core.frame.DataFrame) - input dataframe
+
+        period: (int) - EMA period
+            
+        returns
+        -------------
+        returns the dataframe with EMA column
+        """
+        ema: pd.Series = df["close"].ewm(span=period, adjust=True).mean()
+        df["ema"] = ema
+        return df
+    
+
+    def is_above_trend_line(df: pd.DataFrame, idx: int=-1)->bool:
+        r"""
+        checks if the closing price at a given index in the dataframe is 
+        above EMA value at the index
+
+        parameters
+        -------------
+        df: (pandas.core.frame.DataFrame) - input dataframe
+
+        idx: specified index
+            
+        returns
+        -------------
+        returns True if value at the point is above EMA line, else False
+        """
+
+        if len(df) == 1: return df["close"] > df["ema"]
+        return df["close"].iloc[idx] > df["ema"].iloc[-1]
+
+
+    def is_below_trend_line(df: pd.DataFrame, idx: int=-1)->bool:
+        r"""
+        checks if the closing price at a given index in the dataframe is 
+        below EMA value at the index
+
+        parameters
+        -------------
+        df: (pandas.core.frame.DataFrame) - input dataframe
+
+        idx: specified index
+            
+        returns
+        -------------
+        returns True if value at the point is below EMA line, else False
+        """
+
+        if len(df) == 1: return df["close"] < df["ema"]
+        return df["close"].iloc[idx] < df["ema"].iloc[-1]

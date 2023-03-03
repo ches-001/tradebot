@@ -82,8 +82,8 @@ class BotApplication(QWidget):
 
 
     def validateInput(self, input:Any, rule:Optional[QValidator])->bool:
-        if len(input) == 0:return False
-        if rule is None:return True
+        if len(input) == 0: return False
+        if rule is None: return True
         return rule.validate(input, 10)[0] == QValidator.State.Acceptable
     
 
@@ -101,20 +101,21 @@ class BotApplication(QWidget):
             #parameters
             'symbol' : (self.symbol.text(), None), 
             'volume' : (self.volume.text(), QDoubleValidator()),
-            'deviation' : (self.deviation.text(), QIntValidator()), 
+            'deviation': (self.deviation.text(), QIntValidator()), 
             'unit_pip': (self.unit_pip.text(), QDoubleValidator()),
             'default_sl': (self.default_sl.text(), QDoubleValidator()),
             'max_sl_dist': (self.max_sl_dist.text(), QDoubleValidator()),
             'sl_trail': (self.sl_trail.text(), QDoubleValidator()),
             'default_tp': (self.default_tp.text(), QDoubleValidator()),
             'atr_period':(self.atr_period.text(), QIntValidator()),
-            'sr_likelihood':(self.sr_likelihood.text(), QDoubleValidator()),
-            'sr_threshold':(self.sr_threshold.text(), QDoubleValidator()),
-            'sr_period':(self.sr_period.text(), QIntValidator()),
-            'timezone_diff':(self.timezone_diff.text(), QIntValidator()),
-            'target_profit':(self.target_profit.text(), QDoubleValidator()),
-            'max_loss':(self.max_loss.text(), QDoubleValidator()),
-            'session_duration':(self.session_duration.text(), QIntValidator()),
+            'sr_likelihood': (self.sr_likelihood.text(), QDoubleValidator()),
+            'sr_threshold': (self.sr_threshold.text(), QDoubleValidator()),
+            'sr_period': (self.sr_period.text(), QIntValidator()),
+            'timezone_diff': (self.timezone_diff.text(), QIntValidator()),
+            'target_profit': (self.target_profit.text(), QDoubleValidator()),
+            'max_loss': (self.max_loss.text(), QDoubleValidator()),
+            'session_duration': (self.session_duration.text(), QIntValidator()),
+            'trendline_period': (self.trendline_period.text(), QIntValidator()),
         }
 
         #validate input parameters
@@ -130,6 +131,8 @@ class BotApplication(QWidget):
         if all(validation_list) and self.save_config.isChecked():
             config = {k:v[0] for k, v in params.items()}
             config['use_atr'] = self.use_atr.isChecked()
+            config['percent_equity'] = self.percent_equity.isChecked()
+            config['use_trendline'] = self.use_trendline.isChecked()
             config['save_config'] = self.save_config.isChecked()
             config['strategy'] = self.strategy.currentText()
             config['timeframe'] = self.timeframe.currentText()
@@ -144,6 +147,7 @@ class BotApplication(QWidget):
                 {params['password'][0]} \
                 {params['server'][0]} \
                 --use_atr={int(self.use_atr.isChecked())} \
+                --percent_equity={int(self.percent_equity.isChecked())} \
                 --atr_period={params['atr_period'][0]} \
                 --unit_pip={(params['unit_pip'][0])} \
                 --default_sl={params['default_sl'][0]} \
@@ -162,7 +166,9 @@ class BotApplication(QWidget):
                 --target_profit={params['target_profit'][0]} \
                 --max_loss={params['max_loss'][0]} \
                 --filling_mode={self.filling_mode.currentText()}  \
-                --session_duration={params['session_duration'][0]}
+                --session_duration={params['session_duration'][0]} \
+                --use_trendline={int(self.use_trendline.isChecked())} \
+                --trendline_period={params['trendline_period'][0]}
             """
             os.system(command)
 

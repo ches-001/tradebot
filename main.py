@@ -11,13 +11,13 @@ import numpy as np
 import MetaTrader5 as mt5
 from datetime import datetime, timedelta
 from typing import Union, Optional, List, Dict
-from bot_strategies import Tolu, Engulf, Rejection, SupportResistance
+from bot_strategies import Tolu, Engulf, Rejection, SupportResistance, TrendLines
 from utils import *
 
 # bot details / settings
 BOT_DETAILS:Dict[str, str] = {
     'BOT_NAME': "Peinjo",
-    'VERSION': '0.0.4',
+    'VERSION': '1.0.0',
     'BOT_ICON': os.path.join('app_icon', 'icon.ico'),
     'COPYRIGHTS_INFO': '© Tolu, Mekkix and Ches. All rights reserved.',
     'FILLING_MODES': {
@@ -103,7 +103,8 @@ if __name__ == "__main__":
 
     # trade arguments
     parser.add_argument('--symbol', type=str, default='EURUSD', metavar='', help='Trade symbol')
-    parser.add_argument('--volume', type=float,default=1.0, metavar='', help='Volume to trade')
+    parser.add_argument('--volume', type=float, default=1.0, metavar='', help='Volume to trade')
+    parser.add_argument('--percent_equity', type=int, default=0, choices=[0, 1], metavar='', help='If set to 1, volume is in percentage of capital')
     parser.add_argument('--deviation', type=int, default=0, metavar='', help='Maximum acceptable deviation from the requested price')
     parser.add_argument('--unit_pip', type=float, default=1e-5, metavar='', help='Value of 1 pip for symbol (necessary parameter if ATR is set to 0 (False))')
     parser.add_argument('--use_atr', type=int, choices=[0, 1], default=0, metavar='', help='Use Average True Return (ATR) to compute stop loss, trail, \
@@ -125,6 +126,9 @@ if __name__ == "__main__":
     parser.add_argument('--max_loss', type=float, default=0.0, metavar='', help='Percentage maximum loss for the session. The session will terminate when it is reached')
     parser.add_argument('--filling_mode', type=str, default='IOC', choices=list(BOT_DETAILS['FILLING_MODES'].keys()), metavar='', help='Appropriate order filling mode for your broker')
     parser.add_argument('--session_duration', type=int, default=0, metavar='', help='Duration to run the bot (in minutes)')
+    parser.add_argument('--use_trendline', type=int, choices=[0, 1], default=0, metavar='', help='Base trades on EMA trendline. Inotherwords, take long trades above trendline and short trades below tendline')
+    parser.add_argument('--trendline_period', type=int, default=10, metavar='', help='EMA Trendline Period')
+
     args = parser.parse_args()
 
 
@@ -157,6 +161,7 @@ if __name__ == "__main__":
     print(f"Version:                {BOT_DETAILS['VERSION']} \n")
     print(f'Trade Symbol:           {args.symbol}')
     print(f'Trade Volume:           {args.volume}')
+    print(f'Percentage Capital:     {bool(args.percent_equity)}')
     print(f'Trade Deviation:        {args.deviation}')
     print(f'Trade Unit PIP:         {args.unit_pip}')
     print(f'Use ATR:                {bool(args.use_atr)}')
@@ -175,12 +180,19 @@ if __name__ == "__main__":
     print(f'% Maximmun Loss:        {args.max_loss}%')
     print(f'Filling Mode:           {args.filling_mode}')
     print(f'Session Duration:       {args.session_duration} minutes')
+    print(f'Use Trendline:          {bool(args.use_trendline)}')
+    print(f'Trendline period:       {args.trendline_period}')
     print(f'Bot Session start time: {session_start_time}', '\n')
 
     # Parameters
     ###############################################################################################################################################################
+    STARTING_EQUITY:float = mt5.account_info().balance                  # current equity / balance                                                                #
     SYMBOL:str = args.symbol                                            # symbol                                                                                  #
-    VOLUME:float = args.volume                                          # volume to trade                                                                         #
+    PERCENT_EQUITY:bool = bool(args.percent_equity)                     # option to use percentage of equity as volume                                            #
+    VOLUME:float = (                                                                                                                                              #
+        args.volume if not PERCENT_EQUITY                                                                                                                             #
+        else (args.volume / 100) *  STARTING_EQUITY                                                                                                                       #
+    )                                                                   # volume to trade                                                                         #
     DEVIATION:int = args.deviation                                      # allowable deviation for trade                                                           #
     UNIT_PIP:float = args.unit_pip                                      # unit pip value                                                                          #
     DEFAULT_SL:float = args.default_sl                                  # stop loss points                                                                        #
@@ -199,31 +211,40 @@ if __name__ == "__main__":
     MAX_LOSS:float = args.max_loss                                      # percentage maximum loss for a given session                                             #
     FILLING_MODE:str = args.filling_mode                                # appropriate order filling mode for your broker                                          #
     SESSIION_DURATION:int = args.session_duration                       # duration to run the bot (minutes)                                                       #
+    TRENDLINE_SPAN: int = 500                                           # number of datapoints to consider when computing trendline                                #
+    USE_TRENDLINE:bool = bool(args.use_trendline)                       # option to base trades on EMA trendline                                                  #
+    TRENDLINE_PERIOD:int = args.trendline_period                        # EMA Trendline Period                                                                    #
     ###############################################################################################################################################################
+
+    if USE_TRENDLINE and TRENDLINE_PERIOD > TRENDLINE_SPAN:
+        print(f"Trend Period cannot be more than {TRENDLINE_SPAN}")
+        sys.exit()
 
     # utility variables for the event loop
     trade_start_time:Optional[datetime] = None
     timezone_diff:timedelta = timedelta(hours=TIMEZONE_DIFF)
-    lagtime:timedelta = timedelta(minutes=AVAIALBLE_TIMEFRAMES[TIMEFRAME][1] * max(ATR_PERIOD, SR_PERIOD))
+    lagtime:timedelta = timedelta(minutes=AVAIALBLE_TIMEFRAMES[TIMEFRAME][1] * max(ATR_PERIOD, SR_PERIOD, TRENDLINE_SPAN))
     position_ids:List[int] = []
     session_profit:float = 0
     atr_value:Optional[float] = None
+
     # set price_multiplier to atr if USE_ATR == True, else set it to UNIT PIP
     price_multiplier:Optional[float] = atr_value if (USE_ATR) else UNIT_PIP
-    #account info
-    account_info:mt5.AccountInfo = mt5.account_info()
-    starting_equity:float = account_info.balance
 
     while True:
         #check if stipulated session time has elapsed
+        #-------------------------------------------------------------------------------------------------------------
         session_current_time:str = datetime.now().strftime("%Y-%m-%d %H:%M")
 
         if session_start_time != session_end_time and session_current_time == session_end_time:
             print(session_start_time, session_end_time, session_current_time)
             print(f'session has terminated after {SESSIION_DURATION} minutes, at {session_end_time}')
             break
+        #-------------------------------------------------------------------------------------------------------------
+
 
         # trails stop loss for each ticket
+        #-------------------------------------------------------------------------------------------------------------
         if len(position_ids) > 0:
             for id in position_ids:
                 trailed_order:Union[int, mt5.OrderSendResult] = trail_sl(
@@ -241,7 +262,7 @@ if __name__ == "__main__":
                     position_ids.remove(trailed_order)
 
         elif len(position_ids) == 0 and session_profit != 0:
-            percentage_profit:float = get_percentage_profit(starting_equity, session_profit)
+            percentage_profit:float = get_percentage_profit(STARTING_EQUITY, session_profit)
             
             if TARGET_PROFIT > 0 and percentage_profit >= TARGET_PROFIT:
                 print(f'\nTarget profit has been reached or exceeded at {round(percentage_profit, 4)}%, \
@@ -251,6 +272,8 @@ if __name__ == "__main__":
                 print(f'\nMaximum session loss has been reached or exceeded at {round(percentage_profit, 4)}%, \
                     this session will be terminated')
                 break
+        #-------------------------------------------------------------------------------------------------------------
+
 
         # delay (secs)
         time.sleep(0.06)
@@ -262,16 +285,31 @@ if __name__ == "__main__":
         # error is thrown when the "lagtime" variable that specifies the 
         # time difference is incorrectly set, or when the market is closed.
         try:
-            # get last 2 sessions + current session and convert to dataframe
-            rates:np.array = mt5.copy_rates_range(SYMBOL, AVAIALBLE_TIMEFRAMES[TIMEFRAME][0], (now - lagtime), now)
+            # get rates datapoints by timeframe and convert to dataframe
+            #-------------------------------------------------------------------------------------------------------------
+            rates:np.array = mt5.copy_rates_range(
+                SYMBOL, AVAIALBLE_TIMEFRAMES[TIMEFRAME][0], (now - lagtime), now)
             rates_df:pd.DataFrame = pd.DataFrame(rates)
+            #-------------------------------------------------------------------------------------------------------------
+
+
+            # compute EMA trendline if USE_TRENDLINE is True
+            #-------------------------------------------------------------------------------------------------------------
+            if USE_TRENDLINE: rates_df = TrendLines.append_ema(rates_df, period=TRENDLINE_PERIOD)
+            #-------------------------------------------------------------------------------------------------------------
+
 
             # if no time is set (bot just started), set to latest time in rates_df
+            #-------------------------------------------------------------------------------------------------------------
             if not trade_start_time:
                 trade_start_time = format_uts(rates_df['time'].values[-1], dt_obj=True)
+            #-------------------------------------------------------------------------------------------------------------
+
 
             # get current time from rates_df dataframe
+            #-------------------------------------------------------------------------------------------------------------
             current_trade_time:datetime = format_uts(rates_df['time'].values[-1], dt_obj=True)
+            #-------------------------------------------------------------------------------------------------------------
         
         except IndexError:
             print('Market is currently closed, or timezone difference is incorrect.')
@@ -286,11 +324,14 @@ if __name__ == "__main__":
 
             # compute the ATR of past candle sticks prior to current one
             # and set the multiplier to the atr value
+            #-------------------------------------------------------------------------------------------------------------
             if USE_ATR: 
                 #input dataframe for computing ATR
                 atr_input:pd.DataFrame = input_df.iloc[-ATR_PERIOD:, :]
                 atr_value = compute_latest_atr(atr_input)
                 price_multiplier = atr_value
+            #-------------------------------------------------------------------------------------------------------------
+
 
             # Tolu strategy works with the signal being picked up in real-time, rather
             # than awaiting a 3rd candle stick to form
@@ -300,11 +341,28 @@ if __name__ == "__main__":
             # input dataframe to use to compute support and resistance levels
             sr_input:pd.DataFrame = input_df.iloc[-SR_PERIOD:, :]
 
+            
+            # define buying and selling conditions
+            #-------------------------------------------------------------------------------------------------------------
+            buying_conditions: bool = (
+                (TrendLines.is_above_trend_line(input_df) if USE_TRENDLINE else True) and
+                getattr(Strategy, STRATEGY)()['buy'](input_df) and
+                at_support(sr_input, p=SR_LIKELIHOOD, threshold=SR_THRESHOLD * price_multiplier)
+            )
+            
+            selling_condtions: bool = (
+                (TrendLines.is_below_trend_line(input_df) if USE_TRENDLINE else True) and
+                getattr(Strategy, STRATEGY)()['sell'](input_df) and
+                at_resistance(sr_input, p=SR_LIKELIHOOD, threshold=SR_THRESHOLD * price_multiplier)
+            )
+            #-------------------------------------------------------------------------------------------------------------
+
+
             # check if condition for buying is satisfied and trade
             # then append the position id to the positions_id
             # list
-            if getattr(Strategy, STRATEGY)()['buy'](input_df) and \
-                at_support(sr_input, p=SR_LIKELIHOOD, threshold=SR_THRESHOLD * price_multiplier):
+            #-------------------------------------------------------------------------------------------------------------
+            if buying_conditions:
                 order = make_trade(
                     symbol = SYMBOL, 
                     buy = True, 
@@ -322,13 +380,14 @@ if __name__ == "__main__":
                     position_ids.append(order.order)
 
                 if STRATEGY == 'tolu': trade_start_time = current_trade_time
+            #-------------------------------------------------------------------------------------------------------------
 
 
             # likewise, check if condition for selling is satisfied and
             # trade then append the position id to the positions_id
             # list
-            elif getattr(Strategy, STRATEGY)()['sell'](input_df) and \
-                at_resistance(sr_input, p=SR_LIKELIHOOD, threshold=SR_THRESHOLD * price_multiplier):
+            #-------------------------------------------------------------------------------------------------------------
+            elif selling_condtions:
                 order = make_trade(
                     symbol = SYMBOL, 
                     buy = False, 
@@ -346,3 +405,4 @@ if __name__ == "__main__":
                     position_ids.append(order.order)
 
                 if STRATEGY == 'tolu': trade_start_time = current_trade_time
+            #-------------------------------------------------------------------------------------------------------------
