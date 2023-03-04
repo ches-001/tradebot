@@ -189,9 +189,9 @@ if __name__ == "__main__":
     STARTING_EQUITY:float = mt5.account_info().balance                  # current equity / balance                                                                #
     SYMBOL:str = args.symbol                                            # symbol                                                                                  #
     PERCENT_EQUITY:bool = bool(args.percent_equity)                     # option to use percentage of equity as volume                                            #
-    VOLUME:float = (                                                                                                                                              #
-        args.volume if not PERCENT_EQUITY                                                                                                                             #
-        else (args.volume / 100) *  STARTING_EQUITY                                                                                                                       #
+    VOLUME:float = round(                                                                                                                                         #
+        args.volume if not PERCENT_EQUITY                                                                                                                         #
+        else (STARTING_EQUITY * args.volume / 100)                                                                                                                #
     )                                                                   # volume to trade                                                                         #
     DEVIATION:int = args.deviation                                      # allowable deviation for trade                                                           #
     UNIT_PIP:float = args.unit_pip                                      # unit pip value                                                                          #
@@ -211,7 +211,7 @@ if __name__ == "__main__":
     MAX_LOSS:float = args.max_loss                                      # percentage maximum loss for a given session                                             #
     FILLING_MODE:str = args.filling_mode                                # appropriate order filling mode for your broker                                          #
     SESSIION_DURATION:int = args.session_duration                       # duration to run the bot (minutes)                                                       #
-    TRENDLINE_SPAN: int = 500                                           # number of datapoints to consider when computing trendline                                #
+    TRENDLINE_SPAN: int = 500                                           # number of datapoints to consider when computing trendline                               #
     USE_TRENDLINE:bool = bool(args.use_trendline)                       # option to base trades on EMA trendline                                                  #
     TRENDLINE_PERIOD:int = args.trendline_period                        # EMA Trendline Period                                                                    #
     ###############################################################################################################################################################
