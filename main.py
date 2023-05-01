@@ -211,7 +211,7 @@ if __name__ == "__main__":
     MAX_LOSS:float = args.max_loss                                      # percentage maximum loss for a given session                                             #
     FILLING_MODE:str = args.filling_mode                                # appropriate order filling mode for your broker                                          #
     SESSIION_DURATION:int = args.session_duration                       # duration to run the bot (minutes)                                                       #
-    TRENDLINE_SPAN: int = 500                                           # number of datapoints to consider when computing trendline                               #
+    TRENDLINE_SPAN: int = 1000                                          # number of datapoints to consider when computing trendline                               #
     USE_TRENDLINE:bool = bool(args.use_trendline)                       # option to base trades on EMA trendline                                                  #
     TRENDLINE_PERIOD:int = args.trendline_period                        # EMA Trendline Period                                                                    #
     ###############################################################################################################################################################
@@ -237,13 +237,12 @@ if __name__ == "__main__":
         session_current_time:str = datetime.now().strftime("%Y-%m-%d %H:%M")
 
         if session_start_time != session_end_time and session_current_time == session_end_time:
-            print(session_start_time, session_end_time, session_current_time)
             print(f'session has terminated after {SESSIION_DURATION} minutes, at {session_end_time}')
             break
         #-------------------------------------------------------------------------------------------------------------
 
 
-        # trails stop loss for each ticket
+        # trailing stop loss for each ticket
         #-------------------------------------------------------------------------------------------------------------
         if len(position_ids) > 0:
             for id in position_ids:
@@ -288,14 +287,19 @@ if __name__ == "__main__":
             # get rates datapoints by timeframe and convert to dataframe
             #-------------------------------------------------------------------------------------------------------------
             rates:np.array = mt5.copy_rates_range(
-                SYMBOL, AVAIALBLE_TIMEFRAMES[TIMEFRAME][0], (now - lagtime), now)
+                SYMBOL, AVAIALBLE_TIMEFRAMES[TIMEFRAME][0], (now - lagtime), now
+            )
             rates_df:pd.DataFrame = pd.DataFrame(rates)
             #-------------------------------------------------------------------------------------------------------------
 
 
             # compute EMA trendline if USE_TRENDLINE is True
             #-------------------------------------------------------------------------------------------------------------
-            if USE_TRENDLINE: rates_df = TrendLines.append_ema(rates_df, period=TRENDLINE_PERIOD)
+            if USE_TRENDLINE: 
+                try:
+                    rates_df = TrendLines.append_ema(rates_df, period=TRENDLINE_PERIOD)
+                except KeyError:
+                    print("MetaTrader 5 application has been terminated, or somethining else went wrong!")
             #-------------------------------------------------------------------------------------------------------------
 
 
@@ -335,8 +339,11 @@ if __name__ == "__main__":
 
             # Tolu strategy works with the signal being picked up in real-time, rather
             # than awaiting a 3rd candle stick to form
-            if STRATEGY == 'tolu': input_df = rates_df.iloc[:, :]
-            else: trade_start_time = current_trade_time
+            if STRATEGY == 'tolu': 
+                input_df = rates_df.iloc[:, :]
+
+            else: 
+                trade_start_time = current_trade_time
 
             # input dataframe to use to compute support and resistance levels
             sr_input:pd.DataFrame = input_df.iloc[-SR_PERIOD:, :]
@@ -379,7 +386,8 @@ if __name__ == "__main__":
                     log_open_order(order, buy=True)
                     position_ids.append(order.order)
 
-                if STRATEGY == 'tolu': trade_start_time = current_trade_time
+                if STRATEGY == 'tolu': 
+                    trade_start_time = current_trade_time
             #-------------------------------------------------------------------------------------------------------------
 
 
@@ -404,5 +412,6 @@ if __name__ == "__main__":
                     log_open_order(order, buy=False)
                     position_ids.append(order.order)
 
-                if STRATEGY == 'tolu': trade_start_time = current_trade_time
+                if STRATEGY == 'tolu': 
+                    trade_start_time = current_trade_time
             #-------------------------------------------------------------------------------------------------------------
