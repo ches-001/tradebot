@@ -131,7 +131,6 @@ class BotApplication(QWidget):
         if all(validation_list) and self.save_config.isChecked():
             config = {k:v[0] for k, v in params.items()}
             config['use_atr'] = self.use_atr.isChecked()
-            config['percent_equity'] = self.percent_equity.isChecked()
             config['use_trendline'] = self.use_trendline.isChecked()
             config['save_config'] = self.save_config.isChecked()
             config['strategy'] = self.strategy.currentText()
@@ -147,7 +146,6 @@ class BotApplication(QWidget):
                 {params['password'][0]} \
                 {params['server'][0]} \
                 --use_atr={int(self.use_atr.isChecked())} \
-                --percent_equity={int(self.percent_equity.isChecked())} \
                 --atr_period={params['atr_period'][0]} \
                 --unit_pip={(params['unit_pip'][0])} \
                 --default_sl={params['default_sl'][0]} \

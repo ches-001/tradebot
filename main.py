@@ -104,7 +104,6 @@ if __name__ == "__main__":
     # trade arguments
     parser.add_argument('--symbol', type=str, default='EURUSD', metavar='', help='Trade symbol')
     parser.add_argument('--volume', type=float, default=1.0, metavar='', help='Volume to trade')
-    parser.add_argument('--percent_equity', type=int, default=0, choices=[0, 1], metavar='', help='If set to 1, volume is in percentage of capital')
     parser.add_argument('--deviation', type=int, default=0, metavar='', help='Maximum acceptable deviation from the requested price')
     parser.add_argument('--unit_pip', type=float, default=1e-5, metavar='', help='Value of 1 pip for symbol (necessary parameter if ATR is set to 0 (False))')
     parser.add_argument('--use_atr', type=int, choices=[0, 1], default=0, metavar='', help='Use Average True Return (ATR) to compute stop loss, trail, \
@@ -133,7 +132,7 @@ if __name__ == "__main__":
 
 
     # initialise the MetaTrader 5 app
-    init_env:bool = mt5.initialize(login=args.login, password=args.password, server=args.server)
+    init_env:bool = mt5.initialize()#mt5.initialize(login=args.login, password=args.password, server=args.server)
 
     if not init_env:
         print('failed to initialise metatrader5')
@@ -161,7 +160,6 @@ if __name__ == "__main__":
     print(f"Version:                {BOT_DETAILS['VERSION']} \n")
     print(f'Trade Symbol:           {args.symbol}')
     print(f'Trade Volume:           {args.volume}')
-    print(f'Percentage Capital:     {bool(args.percent_equity)}')
     print(f'Trade Deviation:        {args.deviation}')
     print(f'Trade Unit PIP:         {args.unit_pip}')
     print(f'Use ATR:                {bool(args.use_atr)}')
@@ -188,11 +186,7 @@ if __name__ == "__main__":
     ###############################################################################################################################################################
     STARTING_EQUITY:float = mt5.account_info().balance                  # current equity / balance                                                                #
     SYMBOL:str = args.symbol                                            # symbol                                                                                  #
-    PERCENT_EQUITY:bool = bool(args.percent_equity)                     # option to use percentage of equity as volume                                            #
-    VOLUME:float = round(                                                                                                                                         #
-        args.volume if not PERCENT_EQUITY                                                                                                                         #
-        else (STARTING_EQUITY * args.volume / 100)                                                                                                                #
-    )                                                                   # volume to trade                                                                         #
+    VOLUME:float = args.volume                                          # volume to trade                                                                         #
     DEVIATION:int = args.deviation                                      # allowable deviation for trade                                                           #
     UNIT_PIP:float = args.unit_pip                                      # unit pip value                                                                          #
     DEFAULT_SL:float = args.default_sl                                  # stop loss points                                                                        #

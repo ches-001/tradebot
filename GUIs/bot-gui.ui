@@ -636,19 +636,6 @@
     <string>Run duration (minutes)</string>
    </property>
   </widget>
-  <widget class="QCheckBox" name="percent_equity">
-   <property name="geometry">
-    <rect>
-     <x>60</x>
-     <y>370</y>
-     <width>141</width>
-     <height>20</height>
-    </rect>
-   </property>
-   <property name="text">
-    <string>Percent Equity Volume</string>
-   </property>
-  </widget>
   <widget class="QLabel" name="trendline_period_label">
    <property name="geometry">
     <rect>
