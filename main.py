@@ -132,7 +132,7 @@ if __name__ == "__main__":
 
 
     # initialise the MetaTrader 5 app
-    init_env:bool = mt5.initialize(login=args.login, password=args.password, server=args.server)
+    init_env:bool = mt5.initialize()#mt5.initialize(login=args.login, password=args.password, server=args.server)
 
     if not init_env:
         print('failed to initialise metatrader5')
