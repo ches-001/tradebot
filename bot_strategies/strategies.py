@@ -54,6 +54,7 @@ class Tolu:
 
 # Engulf Strategy
 class Engulf:
+
     @staticmethod
     def is_bullish_engulf(df:pd.DataFrame)->bool:
         r"""
@@ -333,7 +334,6 @@ class SupportResistance:
         
         return c1 and (c2 or c3)
 
-
     @staticmethod
     def is_near_resistance(df:pd.DataFrame, threshold:float, idx:int=-1):
         r"""
@@ -390,8 +390,8 @@ class TrendLines:
         ema: pd.Series = df["close"].ewm(span=period, adjust=True).mean()
         df["ema"] = ema
         return df
-    
 
+    @staticmethod
     def is_above_trend_line(df: pd.DataFrame, idx: int=-1)->bool:
         r"""
         checks if the closing price at a given index in the dataframe is 
@@ -411,7 +411,7 @@ class TrendLines:
         if len(df) == 1: return df["close"] > df["ema"]
         return df["close"].iloc[idx] > df["ema"].iloc[-1]
 
-
+    @staticmethod
     def is_below_trend_line(df: pd.DataFrame, idx: int=-1)->bool:
         r"""
         checks if the closing price at a given index in the dataframe is 
